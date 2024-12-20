@@ -1,0 +1,36 @@
+[tool.poetry]
+name = "app"
+version = "0.1.0"
+description = ""
+authors = ["Keiju Asagi <asagi@tepidworks.jp>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.115.6"
+uvicorn = "^0.34.0"
+ruff = "^0.8.4"
+sqlalchemy = "^2.0.36"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.4"
+taskipy = "^1.14.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py312"
+indent-width = 4
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+
+[tool.taskipy.tasks]
+start = "poetry run uvicorn app.main:app --reload"
+test = "poetry run pytest"
+lint = "poetry run ruff check src --fix"
+db = "poetry run sqlite3 db.sqlite3"
