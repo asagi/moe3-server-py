@@ -1,0 +1,11 @@
+{
+    "editor.formatOnSave": true,
+    "[json]": {
+        "editor.defaultFormatter": "vscode.json-language-features",
+        "files.insertFinalNewline": true
+    },
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true,
+    }
+}
