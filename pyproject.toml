@@ -6,7 +6,7 @@ authors = ["Keiju Asagi <asagi@tepidworks.jp>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.12.8"
 fastapi = "^0.115.6"
 uvicorn = "^0.34.0"
 ruff = "^0.8.4"
