@@ -1,11 +1,12 @@
 from typing import Any, Generator
 from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker, declarative_base
+from sqlalchemy.orm import scoped_session, sessionmaker
+from models.base_model import Base
+
 
 DATABASE = "sqlite:///db.sqlite3"
-Engine = create_engine(DATABASE, echo=False)
-sesion_local = sessionmaker(autocommit=False, autoflush=False, bind=Engine)
-Base = declarative_base()
+engine = create_engine(DATABASE, echo=False)
+sesion_local = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base.query = scoped_session(sesion_local).query_property()
 
 

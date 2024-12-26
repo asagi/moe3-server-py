@@ -35,6 +35,7 @@ extend-select = ["ANN201"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["ANN"]
+"tests/**/*.py" = ["ANN"]
 
 [tool.taskipy.tasks]
 start = "poetry run uvicorn app.main:app --reload"
