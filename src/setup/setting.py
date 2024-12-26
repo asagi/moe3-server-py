@@ -1,3 +1,4 @@
+from typing import Any, Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker, declarative_base
 
@@ -8,7 +9,7 @@ Base = declarative_base()
 Base.query = scoped_session(sesion_local).query_property()
 
 
-def get_db():
+def get_db() -> Generator[Any, Any, Any]:
     db = scoped_session(sesion_local)
     try:
         yield db
