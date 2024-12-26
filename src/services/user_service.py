@@ -3,7 +3,7 @@ from models.user_model import User
 from schemas.user_schema import UserCreate
 
 
-def create_user_entity(db: Session, user: UserCreate):
+def create_user_entity(db: Session, user: UserCreate) -> User:
     db_user = User(
         userid=user.userid,
         sname=user.sname,
