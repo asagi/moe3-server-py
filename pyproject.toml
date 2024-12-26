@@ -29,6 +29,13 @@ quote-style = "double"
 indent-style = "space"
 line-ending = "auto"
 
+[tool.ruff.lint]
+select = ["A", "ANN"]
+extend-select = ["ANN201"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["ANN"]
+
 [tool.taskipy.tasks]
 start = "poetry run uvicorn app.main:app --reload"
 test = "poetry run pytest"
