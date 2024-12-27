@@ -1,4 +1,3 @@
-from tests.settings import db_session
 from src.models.user_model import User
 
 
