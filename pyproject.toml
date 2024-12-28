@@ -30,7 +30,6 @@ indent-style = "space"
 line-ending = "auto"
 
 [tool.ruff.lint]
-select = ["A", "ANN"]
 extend-select = ["ANN201"]
 
 [tool.ruff.lint.per-file-ignores]

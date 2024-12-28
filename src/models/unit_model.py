@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from typing import Any
 from sqlalchemy import Column, Integer, String
 from models.base_model import Base
 
