@@ -13,3 +13,4 @@ class User(Base):
     accesskey = Column("accesskey", String(200))
 
     tables = relationship("Table", back_populates="user")
+    players = relationship("Player", back_populates="user")

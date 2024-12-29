@@ -10,3 +10,4 @@ class Table(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
 
     user = relationship("User", back_populates="tables")
+    players = relationship("Player", back_populates="table")
