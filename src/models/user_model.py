@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String
+from sqlalchemy.orm import relationship
 from models.base_model import Base
 
 
@@ -10,3 +11,5 @@ class User(Base):
     sname = Column("sname", String(200), nullable=False)
     dname = Column("dname", String(200))
     accesskey = Column("accesskey", String(200))
+
+    tables = relationship("Table", back_populates="user")
