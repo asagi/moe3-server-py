@@ -7,7 +7,7 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
-    userid = Column("userid", Integer, unique=True, index=True, nullable=False)
+    xid = Column("xid", Integer, unique=True, index=True, nullable=False)
     sname = Column("sname", String(200), nullable=False)
     dname = Column("dname", String(200))
     accesskey = Column("accesskey", String(200))

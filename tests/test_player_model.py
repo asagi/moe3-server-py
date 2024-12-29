@@ -4,7 +4,7 @@ from src.models.user_model import User
 
 
 def test_player_creation(db_session):
-    new_user = User(userid=123, sname="abc")
+    new_user = User(xid=123, sname="abc")
     new_table = Table()
     new_player = Player()
     new_player.user = new_user

@@ -5,7 +5,7 @@ from schemas.user_schema import UserCreate
 
 def create_user_entity(db: Session, user: UserCreate) -> User:
     db_user = User(
-        userid=user.userid,
+        xid=user.xid,
         sname=user.sname,
         dname=user.dname,
         acceesskey=user.accesskey,
