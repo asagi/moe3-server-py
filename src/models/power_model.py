@@ -9,6 +9,6 @@ class Power(Base):
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     symbol = Column("symbol", String)
     name = Column("name", String)
-    possessive = Column("possessive", String)
+    adjective = Column("adjective", String)
 
     units = relationship("Unit", back_populates="power")
