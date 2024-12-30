@@ -1,14 +1,19 @@
 from abc import abstractmethod
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy.orm import relationship
 from models.base_model import Base
+from models.power_model import Power  # noqa
 
 
 class Unit(Base):
     __tablename__ = "units"
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
+    power_id = Column(Integer, ForeignKey("powers.id"))
     type = Column(String)
     province = Column("province", String)
+
+    power = relationship("Power", back_populates="units", uselist=False)
 
     @property
     @abstractmethod
