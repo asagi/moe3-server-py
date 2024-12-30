@@ -1,8 +1,5 @@
-from abc import abstractmethod
 from sqlalchemy import Column, Integer, String
-from sqlalchemy.orm import relationship
 from models.base_model import Base
-from models.power_model import Power  # noqa
 
 
 class Province(Base):
@@ -11,7 +8,7 @@ class Province(Base):
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     type = Column("type", String)
     abbr = Column("abbr", String)
-    ename = Column("ename", String)
+    name = Column("name", String)
     jname = Column("jname", String)
 
     __mapper_args__ = {
@@ -20,9 +17,9 @@ class Province(Base):
     }
 
 
-class Land(Province):
+class Inland(Province):
     __mapper_args__ = {
-        "polymorphic_identity": "land",
+        "polymorphic_identity": "inland",
     }
 
 
@@ -32,7 +29,7 @@ class Coast(Province):
     }
 
 
-class Sea(Province):
+class Water(Province):
     __mapper_args__ = {
-        "polymorphic_identity": "sea",
+        "polymorphic_identity": "water",
     }

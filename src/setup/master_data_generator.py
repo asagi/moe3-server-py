@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from models.power_model import Power
+from models.province_model import Inland, Coast, Water
 
 
 def generate_master_data(session: Session) -> None:
@@ -13,4 +14,9 @@ def generate_master_data(session: Session) -> None:
         Power(symbol="t", name="Turkey", adjective="Turkish"),
     ]
     session.add_all(powers)
+
+    provinces = [
+        Inland(),
+    ]
+    session.add_all(provinces)
     session.commit()
