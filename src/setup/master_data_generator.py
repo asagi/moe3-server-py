@@ -3,7 +3,7 @@ from models.power_model import Power
 
 
 def generate_master_data(session: Session) -> None:
-    master_data = [
+    powers = [
         Power(symbol="a", name="Austria", adjective="Austrian"),
         Power(symbol="e", name="England", adjective="English"),
         Power(symbol="f", name="France", adjective="French"),
@@ -12,5 +12,5 @@ def generate_master_data(session: Session) -> None:
         Power(symbol="r", name="Russia", adjective="Russian"),
         Power(symbol="t", name="Turkey", adjective="Turkish"),
     ]
-    session.add_all(master_data)
+    session.add_all(powers)
     session.commit()
