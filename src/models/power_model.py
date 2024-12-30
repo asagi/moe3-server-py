@@ -10,5 +10,3 @@ class Power(Base):
     symbol = Column("symbol", String)
     name = Column("name", String)
     adjective = Column("adjective", String)
-
-    units = relationship("Unit", back_populates="power")

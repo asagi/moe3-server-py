@@ -3,6 +3,7 @@ from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from models.base_model import Base
 from models.power_model import Power  # noqa
+from models.province_model import Province  # noqa
 
 
 class Unit(Base):
@@ -10,10 +11,12 @@ class Unit(Base):
 
     id = Column("id", Integer, primary_key=True, autoincrement=True)
     power_id = Column(Integer, ForeignKey("powers.id"))
+    province_id = Column(Integer, ForeignKey("provinces.id"))
     type = Column(String)
     province = Column("province", String)
 
-    power = relationship("Power", back_populates="units", uselist=False)
+    power = relationship("Power", uselist=False)
+    province = relationship("Province", uselist=False)
 
     @property
     @abstractmethod
