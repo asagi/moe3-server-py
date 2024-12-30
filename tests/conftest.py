@@ -3,6 +3,7 @@ from typing import Any, Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from models.base_model import Base
+from setup.master_data_generator import generate_master_data
 
 
 @pytest.fixture
@@ -14,3 +15,9 @@ def db_session() -> Generator[Any, Any, None]:
     yield session
     session.close()
     Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture
+def master_data(db_session) -> Generator[Any, Any, None]:
+    generate_master_data(db_session)
+    yield db_session
