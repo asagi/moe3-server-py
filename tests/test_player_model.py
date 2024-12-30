@@ -1,6 +1,6 @@
-from src.models.player_model import Player
-from src.models.table_model import Table
-from src.models.user_model import User
+from models.player_model import Player
+from models.table_model import Table
+from models.user_model import User
 
 
 def test_player_creation(db_session):
