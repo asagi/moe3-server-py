@@ -13,3 +13,4 @@ def test_table_creation(db_session):
     assert table is not None
     assert table.user_id == user.id
     assert user.tables[0].id == table.id
+    assert len(table.phases) == 1
