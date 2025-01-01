@@ -7,7 +7,7 @@ from models.phase_model import Phase  # noqa
 class Table(Base):
     __tablename__ = "game_tables"
 
-    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"))
 
     user = relationship("User", back_populates="tables")

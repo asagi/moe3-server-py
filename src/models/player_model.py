@@ -6,7 +6,7 @@ from models.base_model import Base
 class Player(Base):
     __tablename__ = "players"
 
-    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     table_id = Column(Integer, ForeignKey("game_tables.id"))
 

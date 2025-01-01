@@ -9,11 +9,11 @@ from models.province_model import Province  # noqa
 class Unit(Base):
     __tablename__ = "units"
 
-    id = Column("id", Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     power_id = Column(Integer, ForeignKey("powers.id"))
     province_id = Column(Integer, ForeignKey("provinces.id"))
     type = Column(String)
-    province = Column("province", String)
+    province = Column(String)
 
     power = relationship("Power", uselist=False)
     province = relationship("Province", uselist=False)

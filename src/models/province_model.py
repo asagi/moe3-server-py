@@ -6,12 +6,12 @@ from models.base_model import Base
 class Province(Base):
     __tablename__ = "provinces"
 
-    id = Column("id", Integer, primary_key=True, autoincrement=True)
-    type = Column("type", String)
-    abbr = Column("abbr", String)
-    name = Column("name", String)
-    jname = Column("jname", String)
-    supply_center = Column("supply_center", Boolean, default=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    type = Column(String)
+    abbr = Column(String)
+    name = Column(String)
+    jname = Column(String)
+    suppliable = Column(Boolean, default=False)
     power_id = Column(Integer, ForeignKey("powers.id"))
 
     region = relationship("Power", uselist=False)
