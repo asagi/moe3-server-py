@@ -9,8 +9,10 @@ class Phase(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     table_id = Column(Integer, ForeignKey("game_tables.id"))
+    prev_phase_id = Column(Integer, ForeignKey("phases.id"))
 
     table = relationship("Table", back_populates="phases", uselist=False)
+    prev_phase = relationship("Phase", uselist=False)
 
     @classmethod
     def create_ready_phase(cls) -> Self:
