@@ -4,7 +4,7 @@ from models.user_model import User
 
 def test_table_creation(db_session):
     new_user = User(xid=123, sname="abc")
-    new_table = Table()
+    new_table = Table(db_session)
     new_user.tables.append(new_table)
     db_session.add(new_user)
     db_session.commit()

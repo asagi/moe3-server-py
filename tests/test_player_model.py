@@ -5,7 +5,7 @@ from models.user_model import User
 
 def test_player_creation(db_session):
     new_user = User(xid=123, sname="abc")
-    new_table = Table()
+    new_table = Table(db_session)
     new_player = Player()
     new_player.user = new_user
     new_player.table = new_table

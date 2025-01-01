@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.orm import relationship
 from models.base_model import Base
+from models.player_model import Player  # noqa
 
 
 class User(Base):

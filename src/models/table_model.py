@@ -1,7 +1,7 @@
 from sqlalchemy import Column, ForeignKey, Integer
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Session
 from models.base_model import Base
-from models.phase_model import Phase
+from models.user_model import User  # noqa
 
 
 class Table(Base):
@@ -14,5 +14,7 @@ class Table(Base):
     players = relationship("Player", back_populates="table")
     phases = relationship("Phase", back_populates="table")
 
-    def __init__(self) -> None:
-        self.phases.append(Phase.create_ready_phase())
+    def __init__(self, db: Session) -> None:
+        from models.phase_model import Phase
+
+        self.phases.append(Phase.create_ready_phase(db))
