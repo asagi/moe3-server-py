@@ -1,4 +1,5 @@
-from sqlalchemy import Column, ForeignKey, Integer
+from enum import Enum as PyEnum
+from sqlalchemy import Column, Enum, ForeignKey, Integer
 from sqlalchemy.orm import relationship, Session
 from typing import Self, List
 from models.base_model import Base
@@ -10,9 +11,14 @@ from models.territory_model import Territory
 class Phase(Base):
     __tablename__ = "phases"
 
+    class Status(PyEnum):
+        OPEN = "open"
+        CLOSED = "closed"
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     table_id = Column(Integer, ForeignKey("game_tables.id"))
     prev_phase_id = Column(Integer, ForeignKey("phases.id"))
+    status = Column(Enum(Status), nullable=False, default=Status.OPEN)
 
     table = relationship("Table", back_populates="phases", uselist=False)
     prev_phase = relationship("Phase", uselist=False)
@@ -36,4 +42,5 @@ class Phase(Base):
 
     def create_next_phase(self) -> Self:
         new_phase = Phase(prev_phase=self)
+        self.status = Phase.Status.CLOSED
         return new_phase
