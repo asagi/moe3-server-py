@@ -22,6 +22,7 @@ class Phase(Base):
     table_id = Column(Integer, ForeignKey("game_tables.id"))
     prev_phase_id = Column(Integer, ForeignKey("phases.id"))
     status = Column(Enum(Status), nullable=False, default=Status.OPEN)
+    year = Column(Integer, default=0)
 
     table = relationship("Table", back_populates="phases", uselist=False)
     prev_phase = relationship("Phase", uselist=False)
@@ -100,7 +101,7 @@ class ReadyPhase(Phase):
             self.units.append(unit)
 
     def create_next_phase(self) -> Phase:
-        new_phase = SpringOrderPhase(prev_phase=self)
+        new_phase = SpringOrderPhase(prev_phase=self, year=1901)
         self.status = Phase.Status.CLOSED
         return new_phase
 

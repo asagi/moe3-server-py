@@ -7,6 +7,7 @@ def test_ready_phase_creation(master_data):
     master_data.commit()
     ready_phase = master_data.query(Phase).first()
     assert ready_phase is not None
+    assert ready_phase.year == 0
     assert len(ready_phase.territories) == 42
 
 
@@ -21,6 +22,7 @@ def test_phase_relation(master_data):
     assert first_phase.prev_phase is None
     assert second_phase is not None
     assert second_phase.prev_phase == first_phase
+    assert second_phase.year == 1901
     assert len(second_phase.territories) == 0
     assert len(second_phase.latest_territories) == 42
 
