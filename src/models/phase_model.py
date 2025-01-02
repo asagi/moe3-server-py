@@ -57,6 +57,8 @@ class ReadyPhase(Phase):
 
     def __init__(self, db: Session) -> None:
         for province in db.query(Province):
+            if province.region is None:
+                continue
             territory = Territory(province=province, occupier=province.region)
             self.territories.append(territory)
 
