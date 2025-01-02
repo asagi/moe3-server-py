@@ -9,7 +9,7 @@ def test_army_creation(master_data):
     new_unit = Army(province=province, power=power)
     master_data.add(new_unit)
     master_data.commit()
-    unit = master_data.query(Unit).filter_by(province=province).first()
+    unit = master_data.get(Unit, new_unit.id)
     assert unit is not None
     assert unit.type == "army"
     assert unit.symbol == "a"
@@ -22,7 +22,7 @@ def test_fleet_creation(master_data):
     new_unit = Fleet(province=province, power=power)
     master_data.add(new_unit)
     master_data.commit()
-    unit = master_data.query(Unit).filter_by(province=province).first()
+    unit = master_data.get(Unit, new_unit.id)
     assert unit is not None
     assert unit.type == "fleet"
     assert unit.symbol == "f"
