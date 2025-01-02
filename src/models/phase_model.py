@@ -1,5 +1,5 @@
 from enum import Enum as PyEnum
-from sqlalchemy import Column, Enum, ForeignKey, Integer
+from sqlalchemy import Column, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
 from typing import Self, List
 from models.base_model import Base
@@ -18,6 +18,7 @@ class Phase(Base):
         CLOSED = "closed"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
+    type = Column(String)
     table_id = Column(Integer, ForeignKey("game_tables.id"))
     prev_phase_id = Column(Integer, ForeignKey("phases.id"))
     status = Column(Enum(Status), nullable=False, default=Status.OPEN)
@@ -29,10 +30,10 @@ class Phase(Base):
 
     @classmethod
     def create_ready_phase(cls, db: Session) -> Self:
-        phase = cls()
+        ready_phase = ReadyPhase()
         for province in db.query(Province):
             territory = Territory(province=province, occupier=province.region)
-            phase.territories.append(territory)
+            ready_phase.territories.append(territory)
 
         # fmt: off
         powers = {symbol: db.query(Power).filter_by(symbol=symbol).first() for symbol in ["a", "e", "f", "g", "i", "r", "t"]}
@@ -69,9 +70,9 @@ class Phase(Base):
             Fleet(province=provinces["ank"], power=powers["t"]),
         ]
         for unit in units:
-            phase.units.append(unit)
+            ready_phase.units.append(unit)
 
-        return phase
+        return ready_phase
 
     @property
     def latest_territories(self) -> List:
@@ -81,7 +82,81 @@ class Phase(Base):
             return self.prev_phase.latest_territories
         return []
 
-    def create_next_phase(self) -> Self:
-        new_phase = Phase(prev_phase=self)
+    @property
+    def latest_units(self) -> List:
+        if self.units:
+            return self.units
+        if self.prev_phase:
+            return self.prev_phase.latest_units
+        return []
+
+    __mapper_args__ = {
+        "polymorphic_identity": "phase",
+        "polymorphic_on": type,
+    }
+
+
+class ReadyPhase(Phase):
+    __mapper_args__ = {
+        "polymorphic_identity": "ready",
+    }
+
+    def create_next_phase(self) -> Phase:
+        new_phase = SpringOrderPhase(prev_phase=self)
+        self.status = Phase.Status.CLOSED
+        return new_phase
+
+
+class SpringOrderPhase(Phase):
+    __mapper_args__ = {
+        "polymorphic_identity": "spring_order",
+    }
+
+    def create_next_phase(self) -> Phase:
+        new_phase = SpringRetreatPhase(prev_phase=self)
+        self.status = Phase.Status.CLOSED
+        return new_phase
+
+
+class SpringRetreatPhase(Phase):
+    __mapper_args__ = {
+        "polymorphic_identity": "spring_retreat",
+    }
+
+    def create_next_phase(self) -> Phase:
+        new_phase = FallOrderPhase(prev_phase=self)
+        self.status = Phase.Status.CLOSED
+        return new_phase
+
+
+class FallOrderPhase(Phase):
+    __mapper_args__ = {
+        "polymorphic_identity": "fall_order",
+    }
+
+    def create_next_phase(self) -> Phase:
+        new_phase = FallRetreatPhase(prev_phase=self)
+        self.status = Phase.Status.CLOSED
+        return new_phase
+
+
+class FallRetreatPhase(Phase):
+    __mapper_args__ = {
+        "polymorphic_identity": "fall_retreat",
+    }
+
+    def create_next_phase(self) -> Phase:
+        new_phase = AdjusntmentPhase(prev_phase=self)
+        self.status = Phase.Status.CLOSED
+        return new_phase
+
+
+class AdjusntmentPhase(Phase):
+    __mapper_args__ = {
+        "polymorphic_identity": "adjustment",
+    }
+
+    def create_next_phase(self) -> Phase:
+        new_phase = SpringOrderPhase(prev_phase=self)
         self.status = Phase.Status.CLOSED
         return new_phase
