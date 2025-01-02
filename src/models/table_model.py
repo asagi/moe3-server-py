@@ -15,6 +15,6 @@ class Table(Base):
     phases = relationship("Phase", back_populates="table")
 
     def __init__(self, db: Session) -> None:
-        from models.phase_model import Phase
+        from models.phase_model import ReadyPhase
 
-        self.phases.append(Phase.create_ready_phase(db))
+        self.phases.append(ReadyPhase(db))

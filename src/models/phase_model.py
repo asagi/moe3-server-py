@@ -1,7 +1,7 @@
 from enum import Enum as PyEnum
 from sqlalchemy import Column, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
-from typing import Self, List
+from typing import List
 from models.base_model import Base
 from models.province_model import Province
 from models.table_model import Table  # noqa
@@ -28,12 +28,37 @@ class Phase(Base):
     territories = relationship("Territory")
     units = relationship("Unit")
 
-    @classmethod
-    def create_ready_phase(cls, db: Session) -> Self:
-        ready_phase = ReadyPhase()
+    @property
+    def latest_territories(self) -> List:
+        if self.territories:
+            return self.territories
+        if self.prev_phase:
+            return self.prev_phase.latest_territories
+        return []
+
+    @property
+    def latest_units(self) -> List:
+        if self.units:
+            return self.units
+        if self.prev_phase:
+            return self.prev_phase.latest_units
+        return []
+
+    __mapper_args__ = {
+        "polymorphic_identity": "phase",
+        "polymorphic_on": type,
+    }
+
+
+class ReadyPhase(Phase):
+    __mapper_args__ = {
+        "polymorphic_identity": "ready",
+    }
+
+    def __init__(self, db: Session) -> None:
         for province in db.query(Province):
             territory = Territory(province=province, occupier=province.region)
-            ready_phase.territories.append(territory)
+            self.territories.append(territory)
 
         # fmt: off
         powers = {symbol: db.query(Power).filter_by(symbol=symbol).first() for symbol in ["a", "e", "f", "g", "i", "r", "t"]}
@@ -70,36 +95,7 @@ class Phase(Base):
             Fleet(province=provinces["ank"], power=powers["t"]),
         ]
         for unit in units:
-            ready_phase.units.append(unit)
-
-        return ready_phase
-
-    @property
-    def latest_territories(self) -> List:
-        if self.territories:
-            return self.territories
-        if self.prev_phase:
-            return self.prev_phase.latest_territories
-        return []
-
-    @property
-    def latest_units(self) -> List:
-        if self.units:
-            return self.units
-        if self.prev_phase:
-            return self.prev_phase.latest_units
-        return []
-
-    __mapper_args__ = {
-        "polymorphic_identity": "phase",
-        "polymorphic_on": type,
-    }
-
-
-class ReadyPhase(Phase):
-    __mapper_args__ = {
-        "polymorphic_identity": "ready",
-    }
+            self.units.append(unit)
 
     def create_next_phase(self) -> Phase:
         new_phase = SpringOrderPhase(prev_phase=self)

@@ -1,8 +1,8 @@
-from models.phase_model import Phase
+from models.phase_model import Phase, ReadyPhase
 
 
 def test_ready_phase_creation(master_data):
-    new_ready_phase = Phase.create_ready_phase(master_data)
+    new_ready_phase = ReadyPhase(master_data)
     master_data.add(new_ready_phase)
     master_data.commit()
     ready_phase = master_data.query(Phase).first()
@@ -11,7 +11,7 @@ def test_ready_phase_creation(master_data):
 
 
 def test_phase_relation(master_data):
-    new_first_phase = Phase.create_ready_phase(master_data)
+    new_first_phase = ReadyPhase(master_data)
     new_second_phase = new_first_phase.create_next_phase()
     master_data.add(new_second_phase)
     master_data.commit()
@@ -26,7 +26,7 @@ def test_phase_relation(master_data):
 
 
 def test_phase_status(master_data):
-    new_first_phase = Phase.create_ready_phase(master_data)
+    new_first_phase = ReadyPhase(master_data)
     master_data.add(new_first_phase)
     master_data.commit()
     first_phase = master_data.query(Phase).filter_by(prev_phase=None).first()
