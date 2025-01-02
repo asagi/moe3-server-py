@@ -21,19 +21,19 @@ class Phase(Base):
     @classmethod
     def create_ready_phase(cls, db: Session) -> Self:
         phase = cls()
-
         for province in db.query(Province):
             territory = Territory(province=province, occupier=province.region)
             phase.territories.append(territory)
-
         return phase
 
     @property
     def latest_territories(self) -> List:
         if self.territories:
             return self.territories
-
         if self.prev_phase:
             return self.prev_phase.latest_territories
-
         return []
+
+    def create_next_phase(self) -> Self:
+        new_phase = Phase(prev_phase=self)
+        return new_phase

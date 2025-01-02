@@ -12,7 +12,7 @@ def test_ready_phase_creation(master_data):
 
 def test_phase_relation(master_data):
     new_first_phase = Phase.create_ready_phase(master_data)
-    new_second_phase = Phase(prev_phase=new_first_phase)
+    new_second_phase = new_first_phase.create_next_phase()
     master_data.add(new_second_phase)
     master_data.commit()
     first_phase = master_data.query(Phase).filter_by(prev_phase=None).first()
