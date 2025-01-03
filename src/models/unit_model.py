@@ -19,6 +19,11 @@ class Unit(Base):
     power = relationship("Power", uselist=False)
     province = relationship("Province", uselist=False)
 
+    __mapper_args__ = {
+        "polymorphic_identity": "unit",
+        "polymorphic_on": type,
+    }
+
     @classmethod
     def get_initial_units(cls, db: Session) -> List:
         powers = {power.symbol: power for power in db.query(Power).all()}
@@ -52,11 +57,6 @@ class Unit(Base):
     @abstractmethod
     def symbol(self) -> str:
         raise NotImplementedError("This property should be overridden")
-
-    __mapper_args__ = {
-        "polymorphic_identity": "unit",
-        "polymorphic_on": type,
-    }
 
 
 class Army(Unit):
