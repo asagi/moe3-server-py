@@ -3,8 +3,8 @@ from typing import List
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship, Session
 from models.base_model import Base
-from models.power_model import Power  # noqa
-from models.province_model import Province  # noqa
+from models.power_model import Power
+from models.province_model import Province
 
 
 class Unit(Base):

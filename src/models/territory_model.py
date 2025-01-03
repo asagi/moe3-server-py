@@ -1,7 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Integer
 from sqlalchemy.orm import relationship
 from models.base_model import Base
-from models.power_model import Power  # noqa
 
 
 class Territory(Base):

@@ -4,7 +4,6 @@ from sqlalchemy.orm import relationship, Session
 from typing import List
 from models.base_model import Base
 from models.province_model import Province
-from models.table_model import Table  # noqa
 from models.territory_model import Territory
 from models.unit_model import Unit
 
