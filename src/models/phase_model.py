@@ -63,16 +63,8 @@ class ReadyPhase(Phase):
             territory = Territory(province=province, occupier=province.region)
             self.territories.append(territory)
 
-        # fmt: off
-        powers = {symbol: db.query(Power).filter_by(symbol=symbol).first() for symbol in ["a", "e", "f", "g", "i", "r", "t"]}
-        provinces = {
-            abbr: db.query(Province).filter_by(abbr=abbr).first()
-            for abbr in [
-                "vie", "bud", "tri", "lvp", "lon", "edi", "par", "mar", "bre", "ber", "mun", "kie",
-                "rom", "ven", "nap", "mos", "war", "stp_sc", "sev", "con", "smy", "ank",
-            ]
-        }
-        # fmt: on
+        powers = {power.symbol: power for power in db.query(Power).all()}
+        provinces = {province.abbr: province for province in db.query(Province).all()}
         units = [
             Army(province=provinces["vie"], power=powers["a"]),
             Army(province=provinces["bud"], power=powers["a"]),
@@ -97,8 +89,7 @@ class ReadyPhase(Phase):
             Army(province=provinces["smy"], power=powers["t"]),
             Fleet(province=provinces["ank"], power=powers["t"]),
         ]
-        for unit in units:
-            self.units.append(unit)
+        self.units.extend(units)
 
     def create_next_phase(self) -> Phase:
         new_phase = SpringOrderPhase(prev_phase=self, year=1901)

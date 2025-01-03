@@ -1,10 +1,10 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import session
 from models.path_model import Path
 from models.power_model import Power
 from models.province_model import Inland, Coast, Water
 
 
-def generate_master_data(session: Session) -> None:
+def generate_master_data(db: session) -> None:
     powers = [
         Power(symbol="a", name="Austria", adjective="Austrian"),
         Power(symbol="e", name="England", adjective="English"),
@@ -14,11 +14,10 @@ def generate_master_data(session: Session) -> None:
         Power(symbol="r", name="Russia", adjective="Russian"),
         Power(symbol="t", name="Turkey", adjective="Turkish"),
     ]
-    session.add_all(powers)
-    session.commit()
+    db.add_all(powers)
+    db.commit()
 
-    power_symbols = ["a", "e", "f", "g", "i", "r", "t"]
-    powers = {symbol: session.query(Power).filter_by(symbol=symbol).first() for symbol in power_symbols}
+    powers = {power.symbol: power for power in db.query(Power).all()}
 
     provinces = [
         Water(abbr="adr", name="Adriatic Water", jname="アドリア海"),
@@ -103,8 +102,8 @@ def generate_master_data(session: Session) -> None:
         Water(abbr="wes", name="Western Mediterranean", jname="西地中海"),
         Coast(abbr="yor", name="Yorkshire", jname="ヨークシャー", region=powers["e"]),
     ]
-    session.add_all(provinces)
-    session.commit()
+    db.add_all(provinces)
+    db.commit()
 
     paths = [
         Path(origin="adr", dest="apu", army=False, fleet=True),
@@ -560,5 +559,5 @@ def generate_master_data(session: Session) -> None:
         Path(origin="yor", dest="nth", army=False, fleet=True),
         Path(origin="yor", dest="lvp", army=True, fleet=False),
     ]
-    session.add_all(paths)
-    session.commit()
+    db.add_all(paths)
+    db.commit()
