@@ -6,8 +6,7 @@ from models.base_model import Base
 from models.province_model import Province
 from models.table_model import Table  # noqa
 from models.territory_model import Territory
-from models.unit_model import Army, Fleet
-from models.power_model import Power
+from models.unit_model import Unit
 
 
 class Phase(Base):
@@ -63,32 +62,7 @@ class ReadyPhase(Phase):
             territory = Territory(province=province, occupier=province.region)
             self.territories.append(territory)
 
-        powers = {power.symbol: power for power in db.query(Power).all()}
-        provinces = {province.abbr: province for province in db.query(Province).all()}
-        units = [
-            Army(province=provinces["vie"], power=powers["a"]),
-            Army(province=provinces["bud"], power=powers["a"]),
-            Fleet(province=provinces["tri"], power=powers["a"]),
-            Army(province=provinces["lvp"], power=powers["e"]),
-            Fleet(province=provinces["lon"], power=powers["e"]),
-            Fleet(province=provinces["edi"], power=powers["e"]),
-            Army(province=provinces["par"], power=powers["f"]),
-            Army(province=provinces["mar"], power=powers["f"]),
-            Fleet(province=provinces["bre"], power=powers["f"]),
-            Army(province=provinces["ber"], power=powers["g"]),
-            Army(province=provinces["mun"], power=powers["g"]),
-            Fleet(province=provinces["kie"], power=powers["g"]),
-            Army(province=provinces["rom"], power=powers["i"]),
-            Army(province=provinces["ven"], power=powers["i"]),
-            Fleet(province=provinces["nap"], power=powers["i"]),
-            Army(province=provinces["mos"], power=powers["r"]),
-            Army(province=provinces["war"], power=powers["r"]),
-            Fleet(province=provinces["stp_sc"], power=powers["r"]),
-            Fleet(province=provinces["sev"], power=powers["r"]),
-            Army(province=provinces["con"], power=powers["t"]),
-            Army(province=provinces["smy"], power=powers["t"]),
-            Fleet(province=provinces["ank"], power=powers["t"]),
-        ]
+        units = Unit.get_initial_units(db)
         self.units.extend(units)
 
     def create_next_phase(self) -> Phase:
