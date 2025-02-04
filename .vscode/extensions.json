@@ -3,6 +3,8 @@
         "ms-python.python",
         "ms-python.debugpy",
         "ms-python.vscode-pylance",
-        "charliermarsh.ruff"
+        "charliermarsh.ruff",
+        "ms-python.isort",
+        "ms-python.black-formatter"
     ]
 }

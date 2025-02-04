@@ -1,0 +1,37 @@
+@startuml seq_login
+title login
+
+actor User
+Participant frontend as FE
+Participant backend as BE
+Participant database as DB
+Participant twitter as TW
+
+User -> FE : login operation
+    FE -> TW : oauth request
+        TW -> User : show auth page
+        User -> TW : accept operation
+    TW -> FE : twitter api access token
+    FE -> BE : twitter api access token
+        BE -> TW : twitter api access token
+        TW -> BE : user data
+        BE -> DB : query user data
+== first login ==
+        DB -> BE : "not found"
+        BE -> BE : create user data
+            note right
+                generate server access key
+            end note
+        BE -> DB : store user data
+        DB -> BE :
+== subsequent login ==
+        DB -> BE : user data
+        BE -> BE : update user data
+        BE -> DB : update user data
+        DB -> BE :
+== ==
+    BE -> FE : server access key
+    FE -> FE : store server access key
+FE -> User : logged in
+
+@enduml

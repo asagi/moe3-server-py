@@ -1,30 +1,15 @@
+from typing import Any
+
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
-from setup.setting import get_db
-from models.user_model import User
-from schemas.user_schema import UserCreate
-from services.user_service import create_user_entity
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.database import get_db
+from schemas.user_schema import UserBase, UserLogin
+from services.user_service import login_user
 
 user_router = APIRouter()
 
 
-@user_router.get("/users")
-async def list_users() -> dict:
-    users = Depends(get_db).query(User).all()
-    return {"data": users}
-
-
-@user_router.post("/users")
-async def create_user(data: dict, db: Session = Depends(get_db)) -> dict:
-    user = UserCreate(**data)
-    return create_user_entity(db=db, user=user)
-
-
-@user_router.put("/users/{user_id}")
-async def update_user() -> dict:
-    pass
-
-
-@user_router.delete("/users/{user_id}")
-async def delete_user() -> dict:
-    pass
+@user_router.post("/users", response_model=UserBase)
+async def login(data: UserLogin, db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
+    return await login_user(db, data)

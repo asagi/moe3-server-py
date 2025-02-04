@@ -1,11 +1,14 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
-class UserCreate(BaseModel):
-    userid: int
-    sname: str
-    dname: str
-    accesskey: str
+class UserLogin(BaseModel):
+    access_token: str
 
-    class Config:
-        orm_mode = True
+
+class UserBase(BaseModel):
+    xid: int
+    screen_name: str
+    display_name: str
+    access_key: str
+
+    model_config = ConfigDict(from_attributes=True)
