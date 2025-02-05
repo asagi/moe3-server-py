@@ -26,7 +26,7 @@ class GameTable(Base):
         from models.phase_model import Phase
 
         instance = cls(owner)
-        ready_phase: Phase = await Phase.create_ready_phase()
+        ready_phase: Phase = Phase.create_ready_phase()
         instance.phases.append(ready_phase)
         return instance
 
