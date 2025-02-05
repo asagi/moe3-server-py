@@ -45,19 +45,16 @@ class Phase(Base):
     }
 
     @classmethod
-    async def create_ready_phase(cls) -> Self:
+    def create_ready_phase(cls) -> Self:
         from models.province_model import Province
         from models.territory_model import Territory
         from models.unit_model import Unit
 
         ready_phase = ReadyPhase()
-        ready_phase.status = Phase.Status.OPEN
         for province in filter(lambda p: p.region is not None, Province.all()):
-            territory = Territory(province, province.region)
-            ready_phase.territories.append(territory)
-        units = Unit.get_initial_units()
-        ready_phase.units.extend(units)
-        return ready_phase
+            ready_phase.territories.append(Territory(province, province.region))
+        ready_phase.units.extend(Unit.get_initial_units())
+        return ready_phase._open()
 
     @property
     def latest_territories(self) -> list["Territory"]:
