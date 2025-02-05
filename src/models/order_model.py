@@ -8,7 +8,7 @@ from models.base_model import Base
 from models.phase_model import Phase
 from models.power_model import Power
 from models.province_model import Province
-from models.unit_model import Unit
+from models.unit_model import Army, Fleet, Unit
 
 
 class Order(Base):
@@ -70,20 +70,26 @@ class Order(Base):
         adjective_str = f"{self.unit.power.adjective} " if self.is_assumed() else ""
         return f"{adjective_str}{self.unit}"
 
+    def create_unit(self) -> Unit:
+        unit = Army(self.power, self.origin) if self.unit.is_army() else Fleet(self.power, self.origin)
+        if self.status == Order.Status.DISLODGED and self.dislodger:
+            unit.dislodged_from = self.dislodger.origin
+        return unit
+
     def is_assumed(self) -> bool:
         return self.power.symbol != self.unit.power.symbol
 
     def is_hold(self) -> bool:
-        return False
+        return isinstance(self, HoldOrder)
 
     def is_move(self) -> bool:
-        return False
+        return isinstance(self, MoveOrder)
 
     def is_support(self) -> bool:
-        return False
+        return isinstance(self, SupportOrder)
 
     def is_convoy(self) -> bool:
-        return False
+        return isinstance(self, ConvoyOrder)
 
     def match(self, other: Self) -> bool:
         if other.is_assumed():
@@ -139,22 +145,6 @@ class HoldOrder(Order):
     def match(self, other: Order) -> bool:
         raise NotImplementedError("This method should not be called.")
 
-    @override
-    def is_hold(self) -> bool:
-        return True
-
-    @override
-    def is_move(self) -> bool:
-        return False
-
-    @override
-    def is_support(self) -> bool:
-        return False
-
-    @override
-    def is_convoy(self) -> bool:
-        return False
-
 
 class MoveOrder(Order):
     __mapper_args__ = {
@@ -175,24 +165,18 @@ class MoveOrder(Order):
         return f"{unit_str}-{self.dest.abbr}"
 
     @override
+    def create_unit(self) -> Unit:
+        if self.status == Order.Status.SUCCESS:
+            return Army(self.power, self.dest) if self.unit.is_army() else Fleet(self.power, self.dest)
+
+        unit = Army(self.power, self.origin) if self.unit.is_army() else Fleet(self.power, self.origin)
+        if self.status == Order.Status.DISLODGED and self.dislodger:
+            unit.dislodged_from = self.dislodger.origin
+        return unit
+
+    @override
     def match(self, other: Self) -> bool:
         raise NotImplementedError("This method should not be called.")
-
-    @override
-    def is_hold(self) -> bool:
-        return False
-
-    @override
-    def is_move(self) -> bool:
-        return True
-
-    @override
-    def is_support(self) -> bool:
-        return False
-
-    @override
-    def is_convoy(self) -> bool:
-        return False
 
 
 class SupportOrder(Order):
@@ -217,22 +201,6 @@ class SupportOrder(Order):
         target_dest_str = f"-{self.target_dest.abbr}" if self.target_dest else ""
         target_adjective_str = f"{self.target_unit.power.adjective} " if self.__support_other__() else ""
         return f"{unit_str} S {target_adjective_str}{self.target_unit}{target_dest_str}"
-
-    @override
-    def is_hold(self) -> bool:
-        return False
-
-    @override
-    def is_move(self) -> bool:
-        return False
-
-    @override
-    def is_support(self) -> bool:
-        return True
-
-    @override
-    def is_convoy(self) -> bool:
-        return False
 
     @override
     def cut(self) -> Self:
@@ -263,22 +231,6 @@ class ConvoyOrder(Order):
         target_dest_str = f"-{self.target_dest.abbr}"
         target_adjective_str = f"{self.target_unit.power.adjective} " if self.__convoy_other__() else ""
         return f"{unit_str} C {target_adjective_str}{self.target_unit}{target_dest_str}"
-
-    @override
-    def is_hold(self) -> bool:
-        return False
-
-    @override
-    def is_move(self) -> bool:
-        return False
-
-    @override
-    def is_support(self) -> bool:
-        return False
-
-    @override
-    def is_convoy(self) -> bool:
-        return True
 
 
 class RetreatOrder(Order):
