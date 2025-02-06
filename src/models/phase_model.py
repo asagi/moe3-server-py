@@ -132,7 +132,8 @@ class SpringOrderPhase(Phase, OrderPhase):
         self.resolve_marching_orders(self.orders, standoffs)
         for order in filter(lambda o: not o.is_assumed(), self.orders):
             self.units.append(order.create_unit())
-        # TODO: スタンドオフ地域保存
+        for province in standoffs:
+            self.standoffs.append(Standoff(province))
 
     @override
     def create_next_phase(self) -> Phase:
@@ -178,7 +179,8 @@ class FallOrderPhase(Phase, OrderPhase):
         self.resolve_marching_orders(self.orders, standoffs)
         for order in filter(lambda o: not o.is_assumed(), self.orders):
             self.units.append(order.create_unit())
-        # TODO: スタンドオフ地域保存
+        for province in standoffs:
+            self.standoffs.append(Standoff(province))
 
     @override
     def create_next_phase(self) -> Phase:
