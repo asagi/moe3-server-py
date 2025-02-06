@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.constants import INITIAL_YEAR
 from models.base_model import Base
 from models.game_table_model import GameTable
-from models.phase_mixins import BeforeOrderPhase, OrderPhase
+from models.phase_mixins import BeforeOrderPhaseMixin, OrderPhaseMixin
 from models.province_model import Province
 from models.standoff_model import Standoff
 
@@ -91,14 +91,25 @@ class Phase(Base):
         self.status = Phase.Status.CLOSED
         return self
 
+    def _get_next_phase(self) -> Self:
+        raise NotImplementedError("This property should be overridden")
+
+    def _get_next_period(self) -> DateTime | None:
+        raise NotImplementedError("This property should be overridden")
+
     def resolve_orders(self) -> None:
         raise NotImplementedError("This property should be overridden")
 
     def create_next_phase(self) -> Self:
-        raise NotImplementedError("This property should be overridden")
+        _ = self._close()
+        new_phase = self._get_next_phase()
+        new_phase.period = self._get_next_period()
+        new_phase.year = self.year
+        new_phase.orders.extend(self._initialize_next_orders())
+        return new_phase
 
 
-class ReadyPhase(Phase, BeforeOrderPhase):
+class ReadyPhase(Phase, BeforeOrderPhaseMixin):
     __mapper_args__ = {
         "polymorphic_identity": "ready",
     }
@@ -108,18 +119,23 @@ class ReadyPhase(Phase, BeforeOrderPhase):
         return self.initialize_next_hold_orders(self.latest_units)
 
     @override
+    def _get_next_phase(self) -> Self:
+        return SpringOrderPhase(prev_phase=self)
+
+    @override
+    def _get_next_period(self) -> DateTime | None:
+        return None  # TODO
+
+    @override
     def create_next_phase(self) -> Phase:
-        _ = self._close()
-        new_phase = SpringOrderPhase(prev_phase=self)
+        new_phase = super().create_next_phase()
         new_phase.year = INITIAL_YEAR
-        new_phase.orders.extend(self._initialize_next_orders())
-        # TODO: new_phase.period = get_next_period()
         return new_phase._open()
 
 
-class SpringOrderPhase(Phase, OrderPhase):
+class OrderPhase(Phase, OrderPhaseMixin):
     __mapper_args__ = {
-        "polymorphic_identity": "spring_order",
+        "polymorphic_identity": "order",
     }
 
     @override
@@ -130,22 +146,43 @@ class SpringOrderPhase(Phase, OrderPhase):
     def resolve_orders(self) -> None:
         standoffs: set[Province] = set()
         self.resolve_marching_orders(self.orders, standoffs)
+
         for order in filter(lambda o: not o.is_assumed(), self.orders):
             self.units.append(order.create_unit())
+
         for province in standoffs:
             self.standoffs.append(Standoff(province))
 
     @override
     def create_next_phase(self) -> Phase:
-        _ = self._close()
-        new_phase = SpringRetreatPhase(prev_phase=self)
-        new_phase.year = self.year
-        new_phase.orders.extend(self._initialize_next_orders())
-        # TODO: new_phase.period = get_next_period()
-        return new_phase._open()
+        return super().create_next_phase()._open()
 
 
-class SpringRetreatPhase(Phase, BeforeOrderPhase):
+class RetreatPhase(Phase):
+    __mapper_args__ = {
+        "polymorphic_identity": "retreat",
+    }
+
+    @override
+    def create_next_phase(self) -> Phase:
+        return super().create_next_phase()._open()
+
+
+class SpringOrderPhase(OrderPhase):
+    __mapper_args__ = {
+        "polymorphic_identity": "spring_order",
+    }
+
+    @override
+    def _get_next_phase(self) -> Self:
+        return SpringRetreatPhase(prev_phase=self)
+
+    @override
+    def _get_next_period(self) -> DateTime | None:
+        return None  # TODO
+
+
+class SpringRetreatPhase(RetreatPhase, BeforeOrderPhaseMixin):
     __mapper_args__ = {
         "polymorphic_identity": "spring_retreat",
     }
@@ -155,58 +192,47 @@ class SpringRetreatPhase(Phase, BeforeOrderPhase):
         return self.initialize_next_hold_orders(self.latest_units)
 
     @override
-    def create_next_phase(self) -> Phase:
-        _ = self._close()
-        new_phase = FallOrderPhase(prev_phase=self)
-        new_phase.year = self.year
-        new_phase.orders.extend(self._initialize_next_orders())
-        # TODO: new_phase.period = get_next_period()
-        return new_phase._open()
+    def _get_next_phase(self) -> Self:
+        return FallOrderPhase(prev_phase=self)
+
+    @override
+    def _get_next_period(self) -> DateTime | None:
+        return None  # TODO
 
 
-class FallOrderPhase(Phase, OrderPhase):
+class FallOrderPhase(OrderPhase):
     __mapper_args__ = {
         "polymorphic_identity": "fall_order",
     }
 
     @override
-    def _initialize_next_orders(self) -> list["Order"]:
-        return self.initialize_next_disband_orders(self.latest_units)
+    def _get_next_phase(self) -> Self:
+        return FallRetreatPhase(prev_phase=self)
 
     @override
-    def resolve_orders(self) -> None:
-        standoffs: set[Province] = set()
-        self.resolve_marching_orders(self.orders, standoffs)
-        for order in filter(lambda o: not o.is_assumed(), self.orders):
-            self.units.append(order.create_unit())
-        for province in standoffs:
-            self.standoffs.append(Standoff(province))
-
-    @override
-    def create_next_phase(self) -> Phase:
-        _ = self._close()
-        new_phase = FallRetreatPhase(prev_phase=self)
-        new_phase.year = self.year
-        new_phase.orders.extend(self._initialize_next_orders())
-        # TODO: new_phase.period = get_next_period()
-        return new_phase._open()
+    def _get_next_period(self) -> DateTime | None:
+        return None  # TODO
 
 
-class FallRetreatPhase(Phase):
+class FallRetreatPhase(RetreatPhase):
     __mapper_args__ = {
         "polymorphic_identity": "fall_retreat",
     }
 
     @override
-    def create_next_phase(self) -> Phase:
-        _ = self._close()
-        new_phase = AdjusntmentPhase(prev_phase=self)
-        new_phase.year = self.year
-        # TODO: new_phase.period = get_next_period()
-        return new_phase._open()
+    def _initialize_next_orders(self) -> list["Order"]:
+        return []  # TODO
+
+    @override
+    def _get_next_phase(self) -> Self:
+        return AdjusntmentPhase(prev_phase=self)
+
+    @override
+    def _get_next_period(self) -> DateTime | None:
+        return None  # TODO
 
 
-class AdjusntmentPhase(Phase, BeforeOrderPhase):
+class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
     __mapper_args__ = {
         "polymorphic_identity": "adjustment",
     }
@@ -216,10 +242,15 @@ class AdjusntmentPhase(Phase, BeforeOrderPhase):
         return self.initialize_next_hold_orders(self.latest_units)
 
     @override
+    def _get_next_phase(self) -> Self:
+        return SpringOrderPhase(prev_phase=self)
+
+    @override
+    def _get_next_period(self) -> DateTime | None:
+        return None  # TODO
+
+    @override
     def create_next_phase(self) -> Phase:
-        _ = self._close()
-        new_phase = SpringOrderPhase(prev_phase=self)
-        new_phase.year = self.year + 1
-        new_phase.orders.extend(self._initialize_next_orders())
-        # TODO: new_phase.period = get_next_period()
+        new_phase = super().create_next_phase()
+        new_phase.year += 1
         return new_phase._open()
