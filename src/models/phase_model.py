@@ -7,7 +7,11 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.constants import INITIAL_YEAR
 from models.base_model import Base
 from models.game_table_model import GameTable
-from models.phase_mixins import BeforeOrderPhaseMixin, OrderPhaseMixin
+from models.phase_mixins import (
+    BeforeAdjustmentPhaseMixin,
+    BeforeOrderPhaseMixin,
+    OrderPhaseMixin,
+)
 from models.province_model import Province
 from models.standoff_model import Standoff
 
@@ -155,7 +159,13 @@ class OrderPhase(Phase, OrderPhaseMixin):
 
     @override
     def create_next_phase(self) -> Phase:
-        return super().create_next_phase()._open()
+        new_phase = super().create_next_phase()
+
+        if self.should_skip_next_retreat_phase():
+            new_phase.resolve_orders()
+            return new_phase.create_next_phase()._open()
+
+        return new_phase._open()
 
 
 class RetreatPhase(Phase):
@@ -214,14 +224,14 @@ class FallOrderPhase(OrderPhase):
         return None  # TODO
 
 
-class FallRetreatPhase(RetreatPhase):
+class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
     __mapper_args__ = {
         "polymorphic_identity": "fall_retreat",
     }
 
     @override
     def _initialize_next_orders(self) -> list["Order"]:
-        return []  # TODO
+        return self.initialize_next_disband_orders(self)
 
     @override
     def _get_next_phase(self) -> Self:
@@ -230,6 +240,16 @@ class FallRetreatPhase(RetreatPhase):
     @override
     def _get_next_period(self) -> DateTime | None:
         return None  # TODO
+
+    @override
+    def create_next_phase(self) -> Phase:
+        new_phase = super().create_next_phase()
+
+        if self.should_skip_next_adjustment_phase():
+            new_phase.resolve_orders()
+            return new_phase.create_next_phase()._open()
+
+        return new_phase._open()
 
 
 class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
