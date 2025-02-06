@@ -107,7 +107,7 @@ def is_effective_convoy(order: "Order", target: "Order") -> bool:
     )
 
 
-class BeforeOrderPhase:
+class BeforeOrderPhaseMixin:
     def initialize_next_hold_orders(self, units: list[Unit]) -> list["Order"]:
         from models.order_model import Order
 
@@ -117,7 +117,7 @@ class BeforeOrderPhase:
         return orders
 
 
-class OrderPhase:
+class OrderPhaseMixin:
 
     def initialize_next_disband_orders(self, units: list[Unit]) -> list["Order"]:
         from models.order_model import Order
