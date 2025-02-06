@@ -7,6 +7,7 @@ from models.unit_model import Unit
 
 if TYPE_CHECKING:
     from models.order_model import Order
+    from models.phase_model import Phase
 
 
 def is_unresolved_move(order: "Order") -> bool:
@@ -117,8 +118,22 @@ class BeforeOrderPhaseMixin:
         return orders
 
 
-class OrderPhaseMixin:
+class BeforeAdjustmentPhaseMixin:
+    def initialize_next_disband_orders(self, phase: "Phase") -> list["Order"]:
+        return []  # TODO
 
+    def should_skip_next_adjustment_phase(self) -> bool:
+        # TODO:
+        # - すべての国の国力とユニット数に差分がなければ True
+        # - 増設の余地のある国があれば False
+        #   - ただし全ての国の増設地点が塞がっている場合は True
+        # - 解体の必要のある国があれば False
+        #   - ただし全ての国の解体ユニットに選択の余地がない（全滅）場合は True
+        #           -> 強制解体実行
+        return False
+
+
+class OrderPhaseMixin:
     def initialize_next_disband_orders(self, units: list[Unit]) -> list["Order"]:
         from models.order_model import Order
 
@@ -126,6 +141,12 @@ class OrderPhaseMixin:
         for unit in filter(lambda u: u.is_dislodged, units):
             orders.append(unit.disband())
         return orders
+
+    def should_skip_next_retreat_phase(self) -> bool:
+        # TODO:
+        # - 敗退ユニットがなければ True
+        # - 全ての敗退ユニットに撤退先がなければ True
+        return False
 
     def resolve_marching_orders(self, unresolved_orders: list["Order"], standoffs: set[Province]) -> None:
         """行軍命令解決"""
