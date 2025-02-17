@@ -6,6 +6,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base_model import Base
 from models.province_model import Province, Water
+from models.unit_model import Unit
 
 
 class Path(Base):
@@ -66,7 +67,7 @@ class Path(Base):
         visited.add(current)
 
         # 海路で隣接するPathを取得
-        paths = [path for path in Path._cache if path.origin_id == current.id and cls.fleet]
+        paths = [path for path in Path._cache if path.origin == current and path.fleet]
         for path in paths:
             next_dest = path.dest
 
@@ -88,3 +89,11 @@ class Path(Base):
                 return True
 
         return False
+
+    @classmethod
+    def get_available_retreat_destinations(cls, unit: Unit, invalid_destinations: set[Province]) -> set[Province]:
+        return {
+            path.dest
+            for path in Path._cache
+            if path.origin == unit.province and path.dest not in invalid_destinations and (path.army if unit.is_army() else path.fleet)
+        }
