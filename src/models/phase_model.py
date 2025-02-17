@@ -147,6 +147,10 @@ class OrderPhase(Phase, OrderPhaseMixin):
         return self.initialize_next_disband_orders(self.latest_units)
 
     @override
+    def _get_next_period(self) -> DateTime | None:
+        return None  # TODO
+
+    @override
     def resolve_orders(self) -> None:
         standoffs: set[Province] = set()
         self.resolve_marching_orders(self.orders, standoffs)
@@ -187,10 +191,6 @@ class SpringOrderPhase(OrderPhase):
     def _get_next_phase(self) -> Self:
         return SpringRetreatPhase(prev_phase=self)
 
-    @override
-    def _get_next_period(self) -> DateTime | None:
-        return None  # TODO
-
 
 class SpringRetreatPhase(RetreatPhase, BeforeOrderPhaseMixin):
     __mapper_args__ = {
@@ -218,10 +218,6 @@ class FallOrderPhase(OrderPhase):
     @override
     def _get_next_phase(self) -> Self:
         return FallRetreatPhase(prev_phase=self)
-
-    @override
-    def _get_next_period(self) -> DateTime | None:
-        return None  # TODO
 
 
 class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
