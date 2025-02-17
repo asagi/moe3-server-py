@@ -12,6 +12,7 @@ from models.phase_mixins import (
     BeforeOrderPhaseMixin,
     OrderPhaseMixin,
 )
+from models.power_model import Power
 from models.province_model import Province
 from models.standoff_model import Standoff
 
@@ -83,6 +84,7 @@ class Phase(Base):
         self.territories = []
         self.units = []
         self.orders = []
+        self._active_powers: set[Power] = set()
 
     def _initialize_next_orders(self) -> list["Order"]:
         raise NotImplementedError("This method should be overridden")
@@ -101,16 +103,21 @@ class Phase(Base):
     def _get_next_period(self) -> DateTime | None:
         raise NotImplementedError("This method should be overridden")
 
-    def resolve_orders(self) -> None:
+    def _resolve_orders(self) -> None:
         raise NotImplementedError("This method should be overridden")
 
-    def create_next_phase(self) -> Self:
+    def _create_next_phase(self) -> Self:
         _ = self._close()
         new_phase = self._get_next_phase()
         new_phase.period = self._get_next_period()
         new_phase.year = self.year
         new_phase.orders.extend(self._initialize_next_orders())
         return new_phase
+
+    def end(self, active_powers: set[Power] = set()) -> Self:
+        self._active_powers = active_powers
+        self._resolve_orders()
+        return self._create_next_phase()
 
 
 class ReadyPhase(Phase, BeforeOrderPhaseMixin):
@@ -131,8 +138,8 @@ class ReadyPhase(Phase, BeforeOrderPhaseMixin):
         return None  # TODO
 
     @override
-    def create_next_phase(self) -> Phase:
-        new_phase = super().create_next_phase()
+    def _create_next_phase(self) -> Phase:
+        new_phase = super()._create_next_phase()
         new_phase.year = INITIAL_YEAR
         return new_phase._open()
 
@@ -151,7 +158,7 @@ class OrderPhase(Phase, OrderPhaseMixin):
         return None  # TODO
 
     @override
-    def resolve_orders(self) -> None:
+    def _resolve_orders(self) -> None:
         standoffs: set[Province] = set()
         self.resolve_marching_orders(self.orders, standoffs)
 
@@ -162,12 +169,13 @@ class OrderPhase(Phase, OrderPhaseMixin):
             self.standoffs.append(Standoff(province))
 
     @override
-    def create_next_phase(self) -> Phase:
-        new_phase = super().create_next_phase()
+    def _create_next_phase(self) -> Phase:
+        new_phase = super()._create_next_phase()
 
         if self.should_skip_next_retreat_phase():
-            new_phase.resolve_orders()
-            return new_phase.create_next_phase()._open()
+            new_phase.period = self.period
+            new_phase._resolve_orders()
+            return new_phase._create_next_phase()._open()
 
         return new_phase._open()
 
@@ -178,8 +186,8 @@ class RetreatPhase(Phase):
     }
 
     @override
-    def create_next_phase(self) -> Phase:
-        return super().create_next_phase()._open()
+    def _create_next_phase(self) -> Phase:
+        return super()._create_next_phase()._open()
 
 
 class SpringOrderPhase(OrderPhase):
@@ -238,12 +246,13 @@ class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
         return None  # TODO
 
     @override
-    def create_next_phase(self) -> Phase:
-        new_phase = super().create_next_phase()
+    def _create_next_phase(self) -> Phase:
+        new_phase = super()._create_next_phase()
 
         if self.should_skip_next_adjustment_phase():
-            new_phase.resolve_orders()
-            return new_phase.create_next_phase()._open()
+            new_phase.period = self.period
+            new_phase._resolve_orders()
+            return new_phase._create_next_phase()._open()
 
         return new_phase._open()
 
@@ -266,7 +275,7 @@ class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
         return None  # TODO
 
     @override
-    def create_next_phase(self) -> Phase:
-        new_phase = super().create_next_phase()
+    def _create_next_phase(self) -> Phase:
+        new_phase = super()._create_next_phase()
         new_phase.year += 1
         return new_phase._open()
