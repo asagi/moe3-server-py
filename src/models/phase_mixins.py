@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from models.path_model import Path
 from models.power_model import Power
 from models.province_model import Province, Water
+from models.standoff_model import Standoff
 from models.unit_model import Unit
 
 if TYPE_CHECKING:
@@ -142,11 +143,29 @@ class OrderPhaseMixin:
             orders.append(unit.disband())
         return orders
 
-    def should_skip_next_retreat_phase(self) -> bool:
-        # TODO:
-        # - 敗退ユニットがなければ True
-        # - 全ての敗退ユニットに撤退先がなければ True
-        return False
+    def should_skip_next_retreat_phase(self, active_powers: set[Power], units: list[Unit], standoffs: list[Standoff]) -> bool:
+        dislodged_units: list[Unit] = list(filter(lambda u: u.is_dislodged(), units))
+        if len(dislodged_units) == 0:
+            # 敗退ユニットがなければ True
+            return True
+
+        # 撤退禁止エリア
+        invalid_destinations: set[Province] = set()
+        invalid_destinations.update([u.province for u in units])
+        invalid_destinations.update([s.province for s in standoffs])
+
+        for unit in dislodged_units:
+            if len(active_powers) > 0 and unit.power not in active_powers:
+                # 非活性国のユニットは考慮しない
+                continue
+
+            valid_destinations = Path.get_available_retreat_destinations(unit, invalid_destinations.union({unit.dislodged_from}))
+            if len(valid_destinations) > 0:
+                # ひとつでも撤退可能な活性国のユニットがあれば False
+                return False
+
+        # 全ての敗退ユニットに撤退先がなければ True
+        return True
 
     def resolve_marching_orders(self, unresolved_orders: list["Order"], standoffs: set[Province]) -> None:
         """行軍命令解決"""

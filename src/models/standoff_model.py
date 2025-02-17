@@ -12,7 +12,7 @@ class Standoff(Base):
     phase_id: Mapped[int] = mapped_column(Integer, ForeignKey("phases.id"))
     province_id: Mapped[int] = mapped_column(Integer, ForeignKey("provinces.id"))
 
-    provinces: Mapped[list[Province]] = relationship("Province", foreign_keys=[province_id])
+    province: Mapped[Province] = relationship("Province", foreign_keys=[province_id], uselist=False)
 
     def __init__(self, province: Province) -> None:
         self.province = province

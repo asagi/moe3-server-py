@@ -84,7 +84,6 @@ class Phase(Base):
         self.territories = []
         self.units = []
         self.orders = []
-        self._active_powers: set[Power] = set()
 
     def _initialize_next_orders(self) -> list["Order"]:
         raise NotImplementedError("This method should be overridden")
@@ -114,10 +113,19 @@ class Phase(Base):
         new_phase.orders.extend(self._initialize_next_orders())
         return new_phase
 
+    def _should_skip_next_phase(self, active_powers: set[Power] = set()) -> bool:
+        return False
+
     def end(self, active_powers: set[Power] = set()) -> Self:
-        self._active_powers = active_powers
         self._resolve_orders()
-        return self._create_next_phase()
+        new_phase = self._create_next_phase()
+
+        if not self._should_skip_next_phase(active_powers):
+            return new_phase
+
+        new_phase.period = self.period
+        new_phase._resolve_orders()
+        return new_phase._create_next_phase()._open()
 
 
 class ReadyPhase(Phase, BeforeOrderPhaseMixin):
@@ -169,15 +177,8 @@ class OrderPhase(Phase, OrderPhaseMixin):
             self.standoffs.append(Standoff(province))
 
     @override
-    def _create_next_phase(self) -> Phase:
-        new_phase = super()._create_next_phase()
-
-        if self.should_skip_next_retreat_phase():
-            new_phase.period = self.period
-            new_phase._resolve_orders()
-            return new_phase._create_next_phase()._open()
-
-        return new_phase._open()
+    def _should_skip_next_phase(self, active_powers: set[Power] = set()) -> bool:
+        return self.should_skip_next_retreat_phase(active_powers, self.units, self.standoffs)
 
 
 class RetreatPhase(Phase):
@@ -188,6 +189,10 @@ class RetreatPhase(Phase):
     @override
     def _create_next_phase(self) -> Phase:
         return super()._create_next_phase()._open()
+
+    @override
+    def _resolve_orders(self) -> None:
+        return
 
 
 class SpringOrderPhase(OrderPhase):
@@ -246,15 +251,8 @@ class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
         return None  # TODO
 
     @override
-    def _create_next_phase(self) -> Phase:
-        new_phase = super()._create_next_phase()
-
-        if self.should_skip_next_adjustment_phase():
-            new_phase.period = self.period
-            new_phase._resolve_orders()
-            return new_phase._create_next_phase()._open()
-
-        return new_phase._open()
+    def _should_skip_next_phase(self, active_powers: set[Power] = set()) -> bool:
+        return self.should_skip_next_adjustment_phase()
 
 
 class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
