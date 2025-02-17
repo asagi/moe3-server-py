@@ -85,7 +85,7 @@ class Phase(Base):
         self.orders = []
 
     def _initialize_next_orders(self) -> list["Order"]:
-        raise NotImplementedError("This property should be overridden")
+        raise NotImplementedError("This method should be overridden")
 
     def _open(self) -> Self:
         self.status = Phase.Status.OPEN
@@ -96,13 +96,13 @@ class Phase(Base):
         return self
 
     def _get_next_phase(self) -> Self:
-        raise NotImplementedError("This property should be overridden")
+        raise NotImplementedError("This method should be overridden")
 
     def _get_next_period(self) -> DateTime | None:
-        raise NotImplementedError("This property should be overridden")
+        raise NotImplementedError("This method should be overridden")
 
     def resolve_orders(self) -> None:
-        raise NotImplementedError("This property should be overridden")
+        raise NotImplementedError("This method should be overridden")
 
     def create_next_phase(self) -> Self:
         _ = self._close()
