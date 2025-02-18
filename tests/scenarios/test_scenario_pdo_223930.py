@@ -14,6 +14,7 @@ from models.unit_model import Army, Fleet
 
 async def test_01__resolve_marching_orders_1901_spring(master_data: AsyncSession) -> None:
     phase = SpringOrderPhase()
+    phase.year = 1901
     aa_vie_gal = Army(Power.A, Province.VIE).move_to(Province.GAL)
     af_tri_hold = Fleet(Power.A, Province.TRI).hold()
     aa_bud_ser = Army(Power.A, Province.BUD).move_to(Province.SER)
@@ -44,7 +45,9 @@ async def test_01__resolve_marching_orders_1901_spring(master_data: AsyncSession
     ta_con_bul = Army(Power.T, Province.CON).move_to(Province.BUL)
     phase.orders.extend([ta_smy_con, tf_ank_bla, ta_con_bul])
 
-    _ = phase.end()
+    new_phase = phase.end()
+    assert new_phase.type == "fall_order"
+    assert new_phase.year == 1901
     assert aa_vie_gal.status == Order.Status.FAILURE
     assert af_tri_hold.status == Order.Status.SUCCESS
     assert aa_bud_ser.status == Order.Status.SUCCESS
@@ -71,6 +74,7 @@ async def test_01__resolve_marching_orders_1901_spring(master_data: AsyncSession
 
 async def test_02__resolve_marching_orders_1901_fall(master_data: AsyncSession) -> None:
     phase = FallOrderPhase()
+    phase.year = 1901
     aa_vie_tyr = Army(Power.A, Province.VIE).move_to(Province.TYR)
     af_tri_ven = Fleet(Power.A, Province.TRI).move_to(Province.VEN)
     aa_ser_hold = Army(Power.A, Province.SER).hold()
@@ -101,7 +105,9 @@ async def test_02__resolve_marching_orders_1901_fall(master_data: AsyncSession) 
     ta_bul_gre = Army(Power.T, Province.BUL).move_to(Province.GRE)
     phase.orders.extend([ta_con_bul, tf_ank_bla, ta_bul_gre])
 
-    _ = phase.end()
+    new_phase = phase.end()
+    assert new_phase.type == "adjustment"
+    assert new_phase.year == 1901
     assert aa_vie_tyr.status == Order.Status.FAILURE
     assert af_tri_ven.status == Order.Status.FAILURE
     assert aa_ser_hold.status == Order.Status.SUCCESS
@@ -128,6 +134,7 @@ async def test_02__resolve_marching_orders_1901_fall(master_data: AsyncSession) 
 
 async def test_03__resolve_marching_orders_1902_spring(master_data: AsyncSession) -> None:
     phase = SpringOrderPhase()
+    phase.year = 1902
     af_tri_ven = Fleet(Power.A, Province.TRI).move_to(Province.VEN)
     aa_ser_rum = Army(Power.A, Province.SER).move_to(Province.RUM)
     aa_vie_tyr = Army(Power.A, Province.VIE).move_to(Province.TYR)
@@ -169,7 +176,9 @@ async def test_03__resolve_marching_orders_1902_spring(master_data: AsyncSession
     tf_bla_rum = Fleet(Power.T, Province.BLA).move_to(Province.RUM)
     phase.orders.extend([tf_smy_aeg, ta_con_bul, ta_bul_gre, tf_bla_rum])
 
-    _ = phase.end()
+    new_phase = phase.end()
+    assert new_phase.type == "spring_retreat"
+    assert new_phase.year == 1902
     assert af_tri_ven.status == Order.Status.FAILURE
     assert aa_bud_supp.status == Order.Status.VALID
     assert aa_ser_rum.status == Order.Status.FAILURE
@@ -207,6 +216,7 @@ async def test_03__resolve_marching_orders_1902_spring(master_data: AsyncSession
 
 async def test_04__resolve_marching_orders_1902_fall(master_data: AsyncSession) -> None:
     phase = FallOrderPhase()
+    phase.year = 1902
     aa_tyr_ven = Army(Power.A, Province.TYR).move_to(Province.VEN)
     af_tri_supp = Fleet(Power.A, Province.TRI).support(aa_tyr_ven)
     aa_bud_supp = Army(Power.A, Province.BUD).support(Army(Power.A, Province.SER).hold())
@@ -245,7 +255,9 @@ async def test_04__resolve_marching_orders_1902_fall(master_data: AsyncSession) 
     tf_bla_rum = Fleet(Power.T, Province.BLA).move_to(Province.RUM)
     phase.orders.extend([ta_bul_gre, tf_aeg_supp, ta_con_bul, tf_bla_rum])
 
-    _ = phase.end()
+    new_phase = phase.end()
+    assert new_phase.type == "fall_retreat"
+    assert new_phase.year == 1902
     assert aa_tyr_ven.status == Order.Status.SUCCESS
     assert af_tri_supp.status == Order.Status.VALID
     assert aa_bud_supp.status == Order.Status.CUT
@@ -280,6 +292,7 @@ async def test_04__resolve_marching_orders_1902_fall(master_data: AsyncSession) 
 
 async def test_05__resolve_marching_orders_1903_spring(master_data: AsyncSession) -> None:
     phase = SpringOrderPhase()
+    phase.year = 1903
     aa_ser_tri = Army(Power.A, Province.SER).move_to(Province.TRI)
     af_tri_adr = Fleet(Power.A, Province.TRI).move_to(Province.ADR)
     aa_bud_gal = Army(Power.A, Province.BUD).move_to(Province.GAL)
@@ -322,7 +335,9 @@ async def test_05__resolve_marching_orders_1903_spring(master_data: AsyncSession
     tf_bla_supp = Fleet(Power.T, Province.BLA).support(ta_bul_supp)
     phase.orders.extend([tf_aeg_ion, tf_smy_eas, ta_gre_ser, ta_bul_supp, tf_bla_supp])
 
-    _ = phase.end()
+    new_phase = phase.end()
+    assert new_phase.type == "fall_order"
+    assert new_phase.year == 1903
     assert aa_ser_tri.status == Order.Status.SUCCESS
     assert af_tri_adr.status == Order.Status.SUCCESS
     assert aa_bud_gal.status == Order.Status.FAILURE
@@ -360,7 +375,8 @@ async def test_05__resolve_marching_orders_1903_spring(master_data: AsyncSession
 
 
 async def test_06__resolve_marching_orders_1903_fall(master_data: AsyncSession) -> None:
-    phase = SpringOrderPhase()
+    phase = FallOrderPhase()
+    phase.year = 1903
     af_adr_ven = Fleet(Power.A, Province.ADR).move_to(Province.VEN)
     aa_bud_vie = Army(Power.A, Province.BUD).move_to(Province.VIE)
     aa_tri_supp = Army(Power.A, Province.TRI).support(aa_bud_vie)
@@ -406,7 +422,9 @@ async def test_06__resolve_marching_orders_1903_fall(master_data: AsyncSession) 
     ta_bul_supp = Army(Power.T, Province.BUL).support(ta_ser_supp)
     phase.orders.extend([tf_ion_hold, tf_eas_supp, ta_ser_supp, tf_bla_supp, ta_bul_supp])
 
-    _ = phase.end()
+    new_phase = phase.end()
+    assert new_phase.type == "fall_retreat"
+    assert new_phase.year == 1903
     assert af_adr_ven.status == Order.Status.FAILURE
     assert aa_bud_vie.status == Order.Status.SUCCESS
     assert aa_tri_supp.status == Order.Status.VALID
