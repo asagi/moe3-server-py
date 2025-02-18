@@ -116,6 +116,7 @@ class BeforeOrderPhaseMixin:
         orders: list[Order] = []
         for unit in units:
             orders.append(unit.hold())
+
         return orders
 
 
@@ -141,6 +142,7 @@ class OrderPhaseMixin:
         orders: list[Order] = []
         for unit in filter(lambda u: u.is_dislodged, units):
             orders.append(unit.disband())
+
         return orders
 
     def should_skip_next_retreat_phase(self, active_powers: set[Power], units: list[Unit], standoffs: list[Standoff]) -> bool:
@@ -220,6 +222,7 @@ class OrderPhaseMixin:
             # 戦力トップが複数なら勝者なしで終了
             for move_order in move_orders:
                 _ = move_order.fail()
+
             standoffs.add(move_orders[0].dest)
             return None
 
@@ -228,6 +231,7 @@ class OrderPhaseMixin:
         for move_order in move_orders:
             if move_order != winner:
                 _ = move_order.fail()
+
         return winner
 
     def _handle_attacking(self, move_order: "Order", target: "Order", orders: list["Order"]) -> "Order.Status":
@@ -452,6 +456,7 @@ class OrderPhaseMixin:
                 if not Path.is_adjacent(move_order.origin, move_order.dest):
                     # 陸路なし
                     _ = move_order.fail()
+
             continue
 
         # 輸送経路の成立していない陸軍の遠隔地移動は失敗
@@ -585,34 +590,34 @@ class OrderPhaseMixin:
                 winner: Order | None = self._handle_conflicting(orders, move_order.dest, standoffs)
                 if winner is None:
                     # 同一地点に対する全移動命令失敗確定
-                    break  # goto on break
+                    break  # jump to continue
 
                 dest_order = next((o for o in orders if o.origin == winner.dest), None)
                 if dest_order is None:
                     # 移動先に障害物なし
                     _ = winner.success()
-                    break  # goto on break
+                    break  # jump to continue
 
                 if dest_order.is_move() and dest_order.status == Order.Status.SUCCESS:
                     # 移動先に障害物なし（移動済み）
                     _ = winner.success()
-                    break  # goto on break
+                    break  # jump to continue
 
                 if dest_order.is_move() and dest_order.status == Order.Status.FAILURE:
                     # 移動先障害物（移動失敗移動命令）排除判定
                     _ = self._handle_attacking(winner, dest_order, orders)
-                    break  # goto on break
+                    break  # jump to continue
 
                 if not dest_order.is_move():
                     # 移動先障害物（非移動命令）排除判定
                     _ = self._handle_attacking(winner, dest_order, orders)
-                    break  # goto on break
+                    break  # jump to continue
 
             else:  # nobreak
                 # 未処理の移動命令がなくなるか移動先が未解決移動命令のみとなったら終了
                 break
 
-            continue  # on break
+            continue
 
     def _succeed_remaining_orders(self, orders: list["Order"]) -> None:
         from models.order_model import Order
