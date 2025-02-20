@@ -1,3 +1,5 @@
+import sys
+from collections import defaultdict
 from typing import Self, cast
 
 from sqlalchemy import Boolean, ForeignKey, Integer, select
@@ -5,7 +7,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base_model import Base
+from models.power_model import Power
 from models.province_model import Province, Water
+from models.territory_model import Territory
 from models.unit_model import Unit
 
 
@@ -97,3 +101,45 @@ class Path(Base):
             for path in Path._cache
             if path.origin == unit.province and path.dest not in invalid_destinations and (path.army if unit.is_army() else path.fleet)
         }
+
+    @classmethod
+    def get_units_sorted_by_supply_distance(cls, units: list[Unit], territories: list[Territory]) -> dict[Power, list[Unit]]:
+        # 各国補給都市
+        supply_centers: dict[Power, set[str]] = defaultdict(set)  # abbrの先頭3文字で格納
+        for territory in territories:
+            if territory.province.suppliable and territory.occupier:
+                supply_centers[territory.occupier].add(territory.province.abbr[:3])
+
+        # 各ユニットの最短距離を計算
+        unit_distances: list[tuple[Unit, int]] = []
+        for unit in units:
+            if unit.power not in supply_centers:
+                continue  # 自国の補給都市がない場合はスキップ
+
+            # BFS で最短距離を求める (Province は abbreviation 3 文字で管理)
+            queue: list[tuple[str, int]] = [(province, 0) for province in supply_centers[unit.power]]
+            visited: set[str] = set(province for province, _ in queue)
+
+            min_distance: int = sys.maxsize
+            while queue:
+                current, dist = queue.pop(0)
+                if current == unit.province.abbr[:3]:
+                    min_distance = dist
+                    break
+
+                for path in cls._cache:
+                    if path.origin.abbr[:3] == current and path.dest.abbr[:3] not in visited:  # abbrの先頭3文字で比較
+                        queue.append((path.dest.abbr[:3], dist + 1))
+                        visited.add(path.dest.abbr[:3])
+
+            unit_distances.append((unit, min_distance))
+
+        # ソート: 距離降順 → Fleet優先 → abbr昇順
+        unit_distances.sort(key=lambda x: (-x[1], x[0].is_fleet(), x[0].province.abbr))
+
+        # Power 別にまとめる
+        sorted_units_by_power: dict[Power, list[Unit]] = defaultdict(list)
+        for unit, _ in unit_distances:
+            sorted_units_by_power[unit.power].append(unit)
+
+        return sorted_units_by_power

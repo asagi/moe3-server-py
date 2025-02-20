@@ -105,6 +105,9 @@ class Phase(Base):
     def _resolve_orders(self) -> None:
         raise NotImplementedError("This method should be overridden")
 
+    def _occupy(self) -> None:
+        pass
+
     def _create_next_phase(self) -> Self:
         _ = self._close()
         new_phase = self._get_next_phase()
@@ -118,6 +121,8 @@ class Phase(Base):
 
     def end(self, active_powers: set[Power] = set()) -> Self:
         self._resolve_orders()
+        self._occupy()
+
         new_phase = self._create_next_phase()
 
         if not self._should_skip_next_phase(active_powers):
@@ -249,6 +254,10 @@ class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
     @override
     def _get_next_period(self) -> DateTime | None:
         return None  # TODO
+
+    @override
+    def _occupy(self) -> None:
+        pass  # TODO
 
     @override
     def _should_skip_next_phase(self, active_powers: set[Power] = set()) -> bool:
