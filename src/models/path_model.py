@@ -33,6 +33,7 @@ class Path(Base):
     def is_adjacent(cls, origin: Province, dest: Province) -> bool:
         if not hasattr(Path, "_cache"):
             raise ValueError("Cache is not loaded. Call `load_cache` first.")
+
         return next((path for path in Path._cache if path.origin_id == origin.id and path.dest_id == dest.id), None) is not None
 
     @classmethod
@@ -135,7 +136,7 @@ class Path(Base):
             unit_distances.append((unit, min_distance))
 
         # ソート: 距離降順 → Fleet優先 → abbr昇順
-        unit_distances.sort(key=lambda x: (-x[1], x[0].is_fleet(), x[0].province.abbr))
+        unit_distances.sort(key=lambda x: (-x[1], x[0].is_army(), x[0].province.abbr))
 
         # Power 別にまとめる
         sorted_units_by_power: dict[Power, list[Unit]] = defaultdict(list)
