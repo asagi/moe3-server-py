@@ -1,3 +1,5 @@
+from typing import Self
+
 from sqlalchemy import Integer, String, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Mapped, mapped_column
@@ -15,5 +17,11 @@ class Power(Base):
 
     @classmethod
     async def load_cache(cls, db: AsyncSession) -> None:
+        cls._all: set[Power] = set()
         for power in (await db.execute(select(cls))).scalars().all():
             setattr(cls, power.symbol.upper(), power)
+            cls._all.add(power)
+
+    @classmethod
+    def all(cls) -> set[Self]:
+        return cls._all
