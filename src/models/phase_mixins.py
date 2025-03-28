@@ -4,6 +4,7 @@ from models.path_model import Path
 from models.power_model import Power
 from models.province_model import Province, Water
 from models.standoff_model import Standoff
+from models.territory_model import Territory
 from models.unit_model import Unit
 
 if TYPE_CHECKING:
@@ -124,14 +125,36 @@ class BeforeAdjustmentPhaseMixin:
     def initialize_next_disband_orders(self, phase: "Phase") -> list["Order"]:
         return []  # TODO
 
-    def should_skip_next_adjustment_phase(self) -> bool:
-        # TODO:
-        # - すべての国の国力とユニット数に差分がなければ True
-        # - 増設の余地のある国があれば False
-        #   - ただし全ての国の増設地点が塞がっている場合は True
-        # - 解体の必要のある国があれば False
-        #   - ただし全ての国の解体ユニットに選択の余地がない（全滅）場合は True
-        #           -> 強制解体実行
+    def should_skip_next_adjustment_phase(self, active_powers: set[Power], units: list[Unit], territories: list[Territory]) -> bool:
+        powers: set[Power] = active_powers if active_powers else Power.all()
+        for power in powers:
+            units_of_power: list[Unit] = [u for u in units if u.power == power]
+            unit_count: int = len(units_of_power)
+            suppliable_provinces_of_power: list[Province] = [t.province for t in territories if t.occupier == power and t.province.suppliable]
+            supplycenter_count: int = len(suppliable_provinces_of_power)
+
+            if supplycenter_count == 0:
+                # 滅亡のためスキップ可
+                continue
+
+            if unit_count == supplycenter_count:
+                # 調整不要のためスキップ可
+                continue
+
+            if unit_count > supplycenter_count:
+                if all(any(u.province == p for u in units) for p in suppliable_provinces_of_power):
+                    # 全ての補給都市が塞がっている場合は増設指示不能のためスキップ可
+                    continue
+
+                # 増設指定が必要なためスキップ不可
+                break
+
+            # 要解体のためスキップ不可
+            break
+
+        else:  # nobreak
+            return True
+
         return False
 
 
