@@ -9,7 +9,6 @@ from models.unit_model import Unit
 
 if TYPE_CHECKING:
     from models.order_model import Order
-    from models.phase_model import Phase
 
 
 def is_unresolved_move(order: "Order") -> bool:
@@ -122,8 +121,21 @@ class BeforeOrderPhaseMixin:
 
 
 class BeforeAdjustmentPhaseMixin:
-    def initialize_next_disband_orders(self, phase: "Phase") -> list["Order"]:
-        return []  # TODO
+    def initialize_next_disband_orders(self, units: list[Unit], territories: list[Territory]) -> list["Order"]:
+        orders: list[Order] = []
+        units_sorted_by_supply_distance: dict[Power, list[Unit]] = Path.get_units_sorted_by_supply_distance(units, territories)
+
+        for power in Power.all():
+            units_of_power: list[Unit] = [u for u in units if u.power == power]
+            unit_count: int = len(units_of_power)
+            suppliable_provinces_of_power: list[Province] = [t.province for t in territories if t.occupier == power and t.province.suppliable]
+            supplycenter_count: int = len(suppliable_provinces_of_power)
+
+            if unit_count > supplycenter_count:
+                for unit in units_sorted_by_supply_distance[power][: unit_count - supplycenter_count]:
+                    orders.append(unit.lose())
+
+        return orders
 
     def should_skip_next_adjustment_phase(self, active_powers: set[Power], units: list[Unit], territories: list[Territory]) -> bool:
         powers: set[Power] = active_powers if active_powers else Power.all()
@@ -141,7 +153,7 @@ class BeforeAdjustmentPhaseMixin:
                 # 調整不要のためスキップ可
                 continue
 
-            if unit_count > supplycenter_count:
+            if unit_count < supplycenter_count:
                 if all(any(u.province == p for u in units) for p in suppliable_provinces_of_power):
                     # 全ての補給都市が塞がっている場合は増設指示不能のためスキップ可
                     continue

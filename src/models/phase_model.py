@@ -128,9 +128,7 @@ class Phase(Base):
         if not self._should_skip_next_phase(active_powers):
             return new_phase._open()
 
-        new_phase.period = self.period
-        new_phase._resolve_orders()
-        return new_phase._create_next_phase()._open()
+        return new_phase.end(active_powers)
 
 
 class ReadyPhase(Phase, BeforeOrderPhaseMixin):
@@ -245,7 +243,7 @@ class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
 
     @override
     def _initialize_next_orders(self) -> list["Order"]:
-        return self.initialize_next_disband_orders(self)
+        return self.initialize_next_disband_orders(self.latest_units, self.latest_territories)
 
     @override
     def _get_next_phase(self) -> Self:
@@ -280,6 +278,10 @@ class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
     @override
     def _get_next_period(self) -> DateTime | None:
         return None  # TODO
+
+    @override
+    def _resolve_orders(self) -> None:
+        pass  # TODO
 
     @override
     def _create_next_phase(self) -> Phase:

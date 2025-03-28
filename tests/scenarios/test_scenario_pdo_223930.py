@@ -106,8 +106,8 @@ async def test_02__resolve_marching_orders_1901_fall(master_data: AsyncSession) 
     phase.orders.extend([ta_con_bul, tf_ank_bla, ta_bul_gre])
 
     new_phase = phase.end()
-    assert new_phase.type == "adjustment"
-    assert new_phase.year == 1901
+    assert new_phase.type == "spring_order"
+    assert new_phase.year == 1902
     assert aa_vie_tyr.status == Order.Status.FAILURE
     assert af_tri_ven.status == Order.Status.FAILURE
     assert aa_ser_hold.status == Order.Status.SUCCESS
