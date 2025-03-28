@@ -116,7 +116,7 @@ class Phase(Base):
         new_phase.orders.extend(self._initialize_next_orders())
         return new_phase
 
-    def _should_skip_next_phase(self, active_powers: set[Power] = set()) -> bool:
+    def _should_skip_next_phase(self, _active_powers: set[Power]) -> bool:
         return False
 
     def end(self, active_powers: set[Power] = set()) -> Self:
@@ -126,7 +126,7 @@ class Phase(Base):
         new_phase = self._create_next_phase()
 
         if not self._should_skip_next_phase(active_powers):
-            return new_phase
+            return new_phase._open()
 
         new_phase.period = self.period
         new_phase._resolve_orders()
@@ -182,7 +182,7 @@ class OrderPhase(Phase, OrderPhaseMixin):
             self.standoffs.append(Standoff(province))
 
     @override
-    def _should_skip_next_phase(self, active_powers: set[Power] = set()) -> bool:
+    def _should_skip_next_phase(self, active_powers: set[Power]) -> bool:
         return self.should_skip_next_retreat_phase(active_powers, self.units, self.standoffs)
 
 
@@ -260,8 +260,8 @@ class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
         pass  # TODO
 
     @override
-    def _should_skip_next_phase(self, active_powers: set[Power] = set()) -> bool:
-        return self.should_skip_next_adjustment_phase()
+    def _should_skip_next_phase(self, active_powers: set[Power]) -> bool:
+        return self.should_skip_next_adjustment_phase(active_powers, self.latest_units, self.latest_territories)
 
 
 class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
