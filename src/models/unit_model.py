@@ -86,6 +86,11 @@ class Unit(Base):
 
         return DisbandOrder(self)
 
+    def lose(self) -> "Order":
+        from models.order_model import LoseOrder
+
+        return LoseOrder(self)
+
     def is_army(self) -> bool:
         return False
 
