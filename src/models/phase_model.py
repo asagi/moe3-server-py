@@ -146,7 +146,7 @@ class ReadyPhase(Phase, BeforeOrderPhaseMixin):
 
     @override
     def _get_next_period(self) -> DateTime | None:
-        return None  # TODO
+        return None  # TODO: _get_next_period （開始時刻取得）
 
     @override
     def _create_next_phase(self) -> Phase:
@@ -166,7 +166,7 @@ class OrderPhase(Phase, OrderPhaseMixin):
 
     @override
     def _get_next_period(self) -> DateTime | None:
-        return None  # TODO
+        return None  # TODO: _get_next_period （撤退フェイズ期限時刻算出）
 
     @override
     def _resolve_orders(self) -> None:
@@ -223,7 +223,7 @@ class SpringRetreatPhase(RetreatPhase, BeforeOrderPhaseMixin):
 
     @override
     def _get_next_period(self) -> DateTime | None:
-        return None  # TODO
+        return None  # TODO: _get_next_period （秋命令フェイズ期限時刻算出）
 
 
 class FallOrderPhase(OrderPhase):
@@ -251,11 +251,21 @@ class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
 
     @override
     def _get_next_period(self) -> DateTime | None:
-        return None  # TODO
+        return None  # TODO: _get_next_period （調整フェイズ期限時刻算出）
 
     @override
     def _occupy(self) -> None:
-        pass  # TODO
+        from models.territory_model import Territory
+
+        # 既存領地の更新
+        for t in self.latest_territories:
+            occupier: Power = next((u.power for u in self.latest_units if u.province == t.province), t.occupier)
+            self.territories.append(Territory(t.province, occupier))
+
+        # 新規占領
+        for u in self.latest_units:
+            if not any(u.province == t.province for t in self.territories):
+                self.territories.append(Territory(u.province, u.power))
 
     @override
     def _should_skip_next_phase(self, active_powers: set[Power]) -> bool:
@@ -277,14 +287,26 @@ class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
 
     @override
     def _get_next_period(self) -> DateTime | None:
-        return None  # TODO
+        return None  # TODO: _get_next_period （春命令フェイズ期限時刻算出）
 
     @override
     def _resolve_orders(self) -> None:
-        pass  # TODO
+        pass  # TODO: 増設解体実行
 
     @override
     def _create_next_phase(self) -> Phase:
         new_phase = super()._create_next_phase()
         new_phase.year += 1
         return new_phase._open()
+
+    @override
+    def _occupy(self) -> None:
+        for p in Power.all():
+            supplycenters_of_power: list[Territory] = [t for t in self.latest_territories if t.occupier == p and t.province.suppliable]
+            if len(supplycenters_of_power) > 0:
+                continue
+
+            # 滅亡国の領地開放
+            for t in self.latest_territories[:]:
+                if t.occupier == p:
+                    self.latest_territories.remove(t)
