@@ -291,7 +291,8 @@ class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
 
     @override
     def _resolve_orders(self) -> None:
-        pass  # TODO: 増設解体実行
+        # TODO: 増設解体実行
+        ...
 
     @override
     def _create_next_phase(self) -> Phase:
