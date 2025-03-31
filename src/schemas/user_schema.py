@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -10,5 +12,6 @@ class UserBase(BaseModel):
     screen_name: str
     display_name: str
     access_key: str
+    last_access_time: datetime
 
     model_config = ConfigDict(from_attributes=True)
