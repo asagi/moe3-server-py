@@ -1,6 +1,7 @@
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Integer, String
+from sqlalchemy import DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base_model import Base
@@ -18,6 +19,7 @@ class User(Base):
     screen_name: Mapped[str] = mapped_column(String, nullable=False)
     display_name: Mapped[str | None] = mapped_column(String)
     access_key: Mapped[str | None] = mapped_column(String)
+    last_access_time: Mapped[datetime | None] = mapped_column(DateTime, default=None)
 
     tables: Mapped[list["GameTable"]] = relationship("GameTable", back_populates="owner")
     players: Mapped[list["Player"]] = relationship("Player", back_populates="user")
