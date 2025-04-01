@@ -3,13 +3,14 @@ from typing import override
 from fastapi import FastAPI, Request, Response
 from fastapi.concurrency import asynccontextmanager
 from fastapi.responses import JSONResponse
+from fastapi.routing import APIRoute
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from app.database import AsyncSessionLocal, get_db
-from app.decorator import allow_unauthorized
 from routers import all_routers
+from routers.decorator import allow_unauthorized, unauthorized_endpoints
 from setup.load_models import Power, load_cache
 
 
@@ -27,20 +28,18 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
         request.state.db = db
 
         try:
-            endpoint = request.scope.get("endpoint")
-            if endpoint:
-                endpoint_func = getattr(endpoint, "func", endpoint)
-                auth_header = request.headers.get("Authorization")
-                if not auth_header and not getattr(endpoint_func, "allow_unauthorized", False):
-                    return JSONResponse(status_code=401, content={"detail": "Authorization header missing"})
+            auth_header = request.headers.get("Authorization")
+            if not auth_header and request.url.path not in app.state.allow_unauthorized_routes:
+                return JSONResponse(status_code=401, content={"detail": "Authorization header missing"})
 
-                if auth_header:
-                    if auth_header.startswith("Bearer "):
-                        _token = auth_header[7:]
-                        # TODO: _token を元にユーザーを特定して最終アクセス時刻を更新する
-                        ...
-                    else:
-                        return JSONResponse(status_code=400, content={"detail": "Invalid Authorization header format"})
+            if auth_header:
+                if auth_header.startswith("Bearer "):
+                    token = auth_header[7:]
+                    # TODO: _token を元にユーザーを特定して最終アクセス時刻を更新する
+                    _ = token
+                    ...
+                else:
+                    return JSONResponse(status_code=400, content={"detail": "Invalid Authorization header format"})
 
             return await call_next(request)
 
@@ -64,6 +63,10 @@ app.add_middleware(BackgroundMiddleware)
 app.add_middleware(AuthorizationMiddleware)
 
 
+for router in all_routers:
+    app.include_router(router)
+
+
 @app.get("/hello")
 @allow_unauthorized
 async def hello_world(request: Request) -> dict[str, str]:
@@ -72,5 +75,10 @@ async def hello_world(request: Request) -> dict[str, str]:
     return {"Hello": f"{len(powers)} powers"}
 
 
-for router in all_routers:
-    app.include_router(router)
+allow_unauthorized_routes: set[str] = set()
+for route in app.routes:
+    if isinstance(route, APIRoute) and hasattr(route, "endpoint"):
+        if route.endpoint.__name__ in unauthorized_endpoints:
+            allow_unauthorized_routes.add(route.path)
+
+app.state.allow_unauthorized_routes = allow_unauthorized_routes
