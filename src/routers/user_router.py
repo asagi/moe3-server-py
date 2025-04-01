@@ -3,7 +3,7 @@ from typing import Any
 from fastapi import APIRouter, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.decorator import allow_unauthorized
+from routers.decorator import allow_unauthorized
 from schemas.user_schema import UserBase, UserLogin
 from services.user_service import login_user
 
