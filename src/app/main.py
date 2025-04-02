@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.concurrency import asynccontextmanager
 from fastapi.responses import JSONResponse
 from fastapi.routing import APIRoute
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -12,6 +13,8 @@ from app.database import AsyncSessionLocal, get_db
 from routers import all_routers
 from routers.decorator import allow_unauthorized, unauthorized_endpoints
 from setup.load_models import Power, load_cache
+
+security = HTTPBearer(auto_error=False)
 
 
 @asynccontextmanager
@@ -28,18 +31,15 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
         request.state.db = db
 
         try:
-            auth_header = request.headers.get("Authorization")
-            if not auth_header and request.url.path not in app.state.allow_unauthorized_routes:
+            credentials: HTTPAuthorizationCredentials | None = await security(request)
+            if not credentials and request.url.path not in app.state.allow_unauthorized_routes:
                 return JSONResponse(status_code=401, content={"detail": "Authorization header missing"})
 
-            if auth_header:
-                if auth_header.startswith("Bearer "):
-                    token = auth_header[7:]
-                    # TODO: _token を元にユーザーを特定して最終アクセス時刻を更新する
-                    _ = token
-                    ...
-                else:
-                    return JSONResponse(status_code=400, content={"detail": "Invalid Authorization header format"})
+            if credentials:
+                token = credentials.credentials  # Bearer トークン部分を取得
+                # TODO: トークンを元にユーザーを特定して最終アクセス時刻を更新する
+                _ = token
+                ...
 
             return await call_next(request)
 
