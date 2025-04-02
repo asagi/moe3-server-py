@@ -18,7 +18,7 @@ class User(Base):
     xid: Mapped[int] = mapped_column(Integer, unique=True, index=True, nullable=False)
     screen_name: Mapped[str] = mapped_column(String, nullable=False)
     display_name: Mapped[str | None] = mapped_column(String)
-    access_key: Mapped[str | None] = mapped_column(String)
+    access_key: Mapped[str | None] = mapped_column(String, index=True)
     last_access_time: Mapped[datetime | None] = mapped_column(DateTime, default=None)
 
     tables: Mapped[list["GameTable"]] = relationship("GameTable", back_populates="owner")
