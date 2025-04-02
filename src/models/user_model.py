@@ -29,3 +29,4 @@ class User(Base):
         self.screen_name = screen_name
         self.display_name = display_name
         self.access_key = None
+        self.last_access_time = None

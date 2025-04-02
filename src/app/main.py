@@ -12,6 +12,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from app.database import AsyncSessionLocal, get_db
 from routers import all_routers
 from routers.decorator import allow_unauthorized, unauthorized_endpoints
+from services.user_service import update_last_access_time
 from setup.load_models import Power, load_cache
 
 security = HTTPBearer(auto_error=False)
@@ -36,10 +37,10 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
                 return JSONResponse(status_code=401, content={"detail": "Authorization header missing"})
 
             if credentials:
-                token = credentials.credentials  # Bearer トークン部分を取得
-                # TODO: トークンを元にユーザーを特定して最終アクセス時刻を更新する
-                _ = token
-                ...
+                try:
+                    await update_last_access_time(db, credentials.credentials)
+                except Exception:
+                    return JSONResponse(status_code=401, content={"detail": "Invalid token"})
 
             return await call_next(request)
 

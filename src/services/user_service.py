@@ -41,3 +41,12 @@ async def login_user(db: AsyncSession, param: UserLogin) -> User:
     db.add(new_user)
     await db.commit()
     return new_user
+
+
+async def update_last_access_time(db: AsyncSession, token: str) -> None:
+    user: User = (await db.execute(select(User).filter_by(access_key=token))).scalar_one_or_none()
+    if user:
+        user.last_access_time = _get_current_time()
+        await db.commit()
+    else:
+        raise Exception("User not found")
