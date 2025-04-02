@@ -8,11 +8,10 @@ from httpx import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
 from models.user_model import User
 
 
-async def test_login_new_user(client: TestClient, mock_user: MagicMock) -> None:
+async def test_login_new_user(client: TestClient, testdb: AsyncSession, mock_user: MagicMock) -> None:
     time_string = "2025-03-31T03:54:50.166954Z"
     dt = datetime.strptime(time_string, "%Y-%m-%dT%H:%M:%S.%fZ")
     dt_utc = dt.replace(tzinfo=timezone.utc)
@@ -33,13 +32,13 @@ async def test_login_new_user(client: TestClient, mock_user: MagicMock) -> None:
     }
 
 
-async def test_login_exist_user(client: TestClient, master_data: AsyncSession, mock_user: MagicMock) -> None:
+async def test_login_exist_user(client: TestClient, testdb: AsyncSession, mock_user: MagicMock) -> None:
     new_user: User = User(xid=123, screen_name="username", display_name="name")
     new_user.access_key = "accesskey"
-    master_data.add(new_user)
-    await master_data.commit()
+    testdb.add(new_user)
+    await testdb.commit()
 
-    exist_user: User | None = (await master_data.execute(select(User).filter_by(xid=123))).scalar_one_or_none()
+    exist_user: User | None = (await testdb.execute(select(User).filter_by(xid=123))).scalar_one_or_none()
     assert exist_user is not None
     assert exist_user.screen_name == "username"
     assert exist_user.display_name == "name"
@@ -64,8 +63,7 @@ async def test_login_exist_user(client: TestClient, master_data: AsyncSession, m
         "last_access_time": "2025-03-31T03:54:50.166954Z",
     }
 
-    db: AsyncSession = await get_db().__anext__()
-    updated_user: User | None = (await db.execute(select(User).filter_by(xid=123))).scalar_one_or_none()
+    updated_user: User | None = (await testdb.execute(select(User).filter_by(xid=123))).scalar_one_or_none()
     assert updated_user is not None
     assert updated_user.screen_name == "sname"
     assert updated_user.display_name == "dname"
