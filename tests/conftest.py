@@ -1,4 +1,5 @@
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator, Generator
+from unittest.mock import MagicMock
 
 import pytest
 from sqlalchemy.ext.asyncio import (
@@ -46,3 +47,13 @@ async def master_data(db_session_memory: AsyncSession) -> AsyncGenerator[AsyncSe
     await generate_master_data(db_session_memory)
     await load_cache(db_session_memory)
     yield db_session_memory
+
+
+@pytest.fixture
+def mock_user() -> Generator[MagicMock, Any, None]:
+    mock_response = MagicMock()
+    mock_response.data = MagicMock()
+    mock_response.data.id = 123
+    mock_response.data.name = "dname"
+    mock_response.data.username = "sname"
+    yield mock_response

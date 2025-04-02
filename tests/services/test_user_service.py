@@ -3,16 +3,15 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import tweepy  # type:ignore
-from fastapi.testclient import TestClient
-from httpx import Response
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
 from models.user_model import User
+from schemas.user_schema import UserLogin
+from services.user_service import login_user
 
 
-async def test_login_new_user(client: TestClient, mock_user: MagicMock) -> None:
+async def test_login_new_user(master_data: AsyncSession, mock_user: MagicMock) -> None:
     time_string = "2025-03-31T03:54:50.166954Z"
     dt = datetime.strptime(time_string, "%Y-%m-%dT%H:%M:%S.%fZ")
     dt_utc = dt.replace(tzinfo=timezone.utc)
@@ -21,19 +20,18 @@ async def test_login_new_user(client: TestClient, mock_user: MagicMock) -> None:
         _ = stack.enter_context(patch.object(tweepy.Client, "get_me", return_value=mock_user))
         _ = stack.enter_context(patch("services.user_service._generate_access_key", return_value="accesskey"))
         _ = stack.enter_context(patch("services.user_service._get_current_time", return_value=dt_utc))
-        response: Response = client.post("/users", json={"access_token": "abc"})
+        param: UserLogin = UserLogin(access_token="abc")
+        user: User = await login_user(master_data, param)
 
-    assert response.status_code == 200
-    assert response.json() == {
-        "xid": 123,
-        "screen_name": "sname",
-        "display_name": "dname",
-        "access_key": "accesskey",
-        "last_access_time": "2025-03-31T03:54:50.166954Z",
-    }
+    assert user.id is not None
+    assert user.xid == 123
+    assert user.screen_name == "sname"
+    assert user.display_name == "dname"
+    assert user.access_key == "accesskey"
+    assert user.last_access_time == dt_utc
 
 
-async def test_login_exist_user(client: TestClient, master_data: AsyncSession, mock_user: MagicMock) -> None:
+async def test_login_exist_user(master_data: AsyncSession, mock_user: MagicMock) -> None:
     new_user: User = User(xid=123, screen_name="username", display_name="name")
     new_user.access_key = "accesskey"
     master_data.add(new_user)
@@ -53,20 +51,12 @@ async def test_login_exist_user(client: TestClient, master_data: AsyncSession, m
         _ = stack.enter_context(patch.object(tweepy.Client, "get_me", return_value=mock_user))
         _ = stack.enter_context(patch("services.user_service._generate_access_key", return_value="accesskey"))
         _ = stack.enter_context(patch("services.user_service._get_current_time", return_value=dt_utc))
-        response: Response = client.post("/users", json={"access_token": "abc"})
+        param: UserLogin = UserLogin(access_token="abc")
+        user: User = await login_user(master_data, param)
 
-    assert response.status_code == 200
-    assert response.json() == {
-        "xid": 123,
-        "screen_name": "sname",
-        "display_name": "dname",
-        "access_key": "accesskey",
-        "last_access_time": "2025-03-31T03:54:50.166954Z",
-    }
-
-    db: AsyncSession = await get_db().__anext__()
-    updated_user: User | None = (await db.execute(select(User).filter_by(xid=123))).scalar_one_or_none()
-    assert updated_user is not None
-    assert updated_user.screen_name == "sname"
-    assert updated_user.display_name == "dname"
-    assert updated_user.access_key == "accesskey"
+    assert user.id is not None
+    assert user.xid == 123
+    assert user.screen_name == "sname"
+    assert user.display_name == "dname"
+    assert user.access_key == "accesskey"
+    assert user.last_access_time == dt_utc
