@@ -1,0 +1,19 @@
+name: Notify Discord on Branch Update
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          curl -H "Content-Type: application/json" \
+               -X POST \
+               -d "{\"content\": \"🚀 ブランチ 'main' に変更がありました！\n[変更を確認する](https://github.com/${{ github.repository }}/commits/main)\"}" \
+               $DISCORD_WEBHOOK
