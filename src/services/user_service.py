@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime, timezone
-from typing import Any, cast
+from typing import cast
 
-import tweepy  # type:ignore
+from google.oauth2.credentials import Credentials
+from googleapiclient.discovery import build  # type: ignore
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,23 +20,24 @@ def _get_current_time():
 
 
 async def login_user(db: AsyncSession, param: UserLogin) -> User:
-    client: Any = tweepy.Client(param.access_token)
-    response: Any = client.get_me(user_auth=False)
+    credentials = Credentials(token=param.access_token)
+    service = build("oauth2", "v2", credentials=credentials)  # type: ignore
+    response = service.userinfo().get().execute()  # type: ignore
 
-    xid: int = cast(int, response.data.id)
-    sname: str = cast(str, response.data.username)
-    dname: str = cast(str, response.data.name)
+    gid: str = cast(str, response["id"])
+    gname: str = cast(str, response["name"])
+    picture: str = cast(str, response["picture"])
 
-    user = (await db.execute(select(User).filter_by(xid=xid))).scalar_one_or_none()
+    user = (await db.execute(select(User).filter_by(gid=gid))).scalar_one_or_none()
     if user:
-        user.screen_name = sname
-        user.display_name = dname
+        user.picture = picture
+        user.gname = gname
         user.access_key = _generate_access_key()
         user.last_access_time = _get_current_time()
         await db.commit()
         return user
 
-    new_user = User(xid=xid, screen_name=sname, display_name=dname)
+    new_user = User(gid=gid, gname=gname, picture=picture)
     new_user.access_key = _generate_access_key()
     new_user.last_access_time = _get_current_time()
     db.add(new_user)

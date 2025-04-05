@@ -7,7 +7,7 @@ from models.user_model import User
 
 
 async def test_player_creation(master_data: AsyncSession) -> None:
-    new_user = User(xid=123, screen_name="test", display_name="test")
+    new_user = User(gid="123", gname="test", picture="https://lh3.googleusercontent.com/a/default-user")
     new_table = await GameTable.create_with_phases(new_user)
     new_user.tables.append(new_table)
     master_data.add(new_table)

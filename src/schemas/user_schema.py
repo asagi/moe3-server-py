@@ -8,9 +8,9 @@ class UserLogin(BaseModel):
 
 
 class UserBase(BaseModel):
-    xid: int
-    screen_name: str
-    display_name: str
+    gid: str
+    gname: str
+    picture: str
     access_key: str
     last_access_time: datetime
 
