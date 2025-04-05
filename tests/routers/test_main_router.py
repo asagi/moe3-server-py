@@ -13,7 +13,7 @@ async def test_read_hello(client: TestClient, testdb: AsyncSession) -> None:
 
 
 async def test_read_hello_with_auth(client: TestClient, testdb: AsyncSession) -> None:
-    new_user: User = User(xid=123, screen_name="screen_name", display_name="display_name")
+    new_user: User = User(gid="123", gname="gname", picture="picture")
     new_user.access_key = "abc"
     testdb.add(new_user)
     await testdb.commit()
@@ -23,7 +23,7 @@ async def test_read_hello_with_auth(client: TestClient, testdb: AsyncSession) ->
 
     updated_user: User | None = (await testdb.execute(select(User).filter_by(access_key="abc"))).scalar_one_or_none()
     assert updated_user is not None
-    assert updated_user.xid == 123
-    assert updated_user.screen_name == "screen_name"
-    assert updated_user.display_name == "display_name"
+    assert updated_user.gid == "123"
+    assert updated_user.gname == "gname"
+    assert updated_user.picture == "picture"
     assert updated_user.access_key == "abc"
