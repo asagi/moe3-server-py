@@ -57,11 +57,12 @@ jobs:
 
           # メッセージの構成
           JSON=$(jq -n \
+            --arg content "$ICON" \
             --arg title "$TITLE" \
             --arg description "$DESCRIPTION" \
             --arg url "${{ env.COMMIT_URL }}" \
-            --arg icon "$ICON" \
             '{
+              content: $content,
               embeds: [
                 {
                   title: $title,
