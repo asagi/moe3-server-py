@@ -27,10 +27,7 @@ jobs:
 
       - name: プッシュタイプの決定
         run: |
-          # リベースの検出
-          if [ "$(git rev-list --count HEAD@{1}..HEAD)" -ge 1 ] && git reflog | grep -q "rebase"; then
-            echo "TYPE=rebase" >> $GITHUB_ENV
-          elif git log -1 --pretty=%B | grep -iq "created\|added"; then
+          if git log -1 --pretty=%B | grep -iq "created\|added"; then
             echo "TYPE=created" >> $GITHUB_ENV
           elif git log -1 --pretty=%B | grep -iq "updated\|modified"; then
             echo "TYPE=updated" >> $GITHUB_ENV
@@ -46,11 +43,7 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          if [ "${{ env.TYPE }}" = "rebase" ]; then
-            ICON="📦"
-            TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was rebased"
-            DESCRIPTION="Multiple commits were rebased and pushed."
-          elif [ "${{ env.TYPE }}" = "created" ]; then
+          if [ "${{ env.TYPE }}" = "created" ]; then
             ICON="🌱"
             TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was created"
             DESCRIPTION="A new branch ${{ env.BRANCH_NAME }} was created."
