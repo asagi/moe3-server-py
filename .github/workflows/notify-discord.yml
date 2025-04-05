@@ -22,7 +22,9 @@ jobs:
 
       - name: 直近のコミット情報を取得
         run: |
-          echo "MESSAGE=$(git log -1 --pretty=%B)" >> $GITHUB_ENV
+          MESSAGE=$(git log -1 --pretty=%B)
+          MESSAGE="${MESSAGE//\n/ }"
+          echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
           echo "COMMIT_URL=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" >> $GITHUB_ENV
 
       - name: プッシュタイプの決定
