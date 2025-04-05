@@ -5,11 +5,11 @@ from models.user_model import User
 
 
 async def test_user_creation(master_data: AsyncSession) -> None:
-    new_user: User = User(xid=123, screen_name="abc", display_name="def")
+    new_user: User = User(gid="123", gname="test", picture="https://example.com")
     master_data.add(new_user)
     await master_data.commit()
-    user: User | None = (await master_data.execute(select(User).filter_by(xid=123))).scalar_one_or_none()
+    user: User | None = (await master_data.execute(select(User).filter_by(gid=123))).scalar_one_or_none()
     assert user is not None
-    assert user.xid == 123
-    assert user.screen_name == "abc"
-    assert user.display_name == "def"
+    assert user.gid == "123"
+    assert user.gname == "test"
+    assert user.picture == "https://example.com"

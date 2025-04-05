@@ -1,5 +1,7 @@
-from typing import Any, AsyncGenerator, Generator
-from unittest.mock import MagicMock
+from contextlib import ExitStack
+from datetime import datetime
+from typing import Any, AsyncGenerator, ContextManager, Generator
+from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlalchemy.ext.asyncio import (
@@ -50,10 +52,24 @@ async def master_data(db_session_memory: AsyncSession) -> AsyncGenerator[AsyncSe
 
 
 @pytest.fixture
-def mock_user() -> Generator[MagicMock, Any, None]:
-    mock_response = MagicMock()
-    mock_response.data = MagicMock()
-    mock_response.data.id = 123
-    mock_response.data.name = "dname"
-    mock_response.data.username = "sname"
-    yield mock_response
+def mock_user() -> Generator[dict[str, Any], None, None]:
+    yield {
+        "id": "123",
+        "name": "gname",
+        "picture": "picture",
+    }
+
+
+@pytest.fixture
+def patched_user_service_factory(mock_user: dict[str, Any]) -> Generator[Any, None, None]:
+    def _factory(dt_utc: datetime) -> ContextManager[ExitStack]:
+        stack = ExitStack()
+        _ = stack.enter_context(patch("google.oauth2.credentials.Credentials.__new__", return_value=None))
+        mock_service = MagicMock()
+        mock_service.userinfo.return_value.get.return_value.execute.return_value = mock_user
+        _ = stack.enter_context(patch("services.user_service.build", return_value=mock_service))
+        _ = stack.enter_context(patch("services.user_service._generate_access_key", return_value="accesskey"))
+        _ = stack.enter_context(patch("services.user_service._get_current_time", return_value=dt_utc))
+        return stack
+
+    yield _factory
