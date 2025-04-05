@@ -1,8 +1,6 @@
-from contextlib import ExitStack
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
+from typing import Any
 
-import tweepy  # type:ignore
 from fastapi.testclient import TestClient
 from httpx import Response
 from sqlalchemy import select
@@ -11,60 +9,56 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models.user_model import User
 
 
-async def test_login_new_user(client: TestClient, testdb: AsyncSession, mock_user: MagicMock) -> None:
+async def test_login_new_user(client: TestClient, testdb: AsyncSession, patched_user_service_factory: Any) -> None:
     time_string = "2025-03-31T03:54:50.166954Z"
     dt = datetime.strptime(time_string, "%Y-%m-%dT%H:%M:%S.%fZ")
     dt_utc = dt.replace(tzinfo=timezone.utc)
+    stack = patched_user_service_factory(dt_utc)
 
-    with ExitStack() as stack:
-        _ = stack.enter_context(patch.object(tweepy.Client, "get_me", return_value=mock_user))
-        _ = stack.enter_context(patch("services.user_service._generate_access_key", return_value="accesskey"))
-        _ = stack.enter_context(patch("services.user_service._get_current_time", return_value=dt_utc))
+    with stack:
         response: Response = client.post("/users", json={"access_token": "abc"})
 
     assert response.status_code == 200
     assert response.json() == {
-        "xid": 123,
-        "screen_name": "sname",
-        "display_name": "dname",
+        "gid": "123",
+        "gname": "gname",
+        "picture": "picture",
         "access_key": "accesskey",
         "last_access_time": "2025-03-31T03:54:50.166954Z",
     }
 
 
-async def test_login_exist_user(client: TestClient, testdb: AsyncSession, mock_user: MagicMock) -> None:
-    new_user: User = User(xid=123, screen_name="username", display_name="name")
+async def test_login_exist_user(client: TestClient, testdb: AsyncSession, patched_user_service_factory: Any) -> None:
+    new_user: User = User(gid="123", gname="gname", picture="picture")
     new_user.access_key = "accesskey"
     testdb.add(new_user)
     await testdb.commit()
 
-    exist_user: User | None = (await testdb.execute(select(User).filter_by(xid=123))).scalar_one_or_none()
+    exist_user: User | None = (await testdb.execute(select(User).filter_by(gid=123))).scalar_one_or_none()
     assert exist_user is not None
-    assert exist_user.screen_name == "username"
-    assert exist_user.display_name == "name"
+    assert exist_user.gname == "gname"
+    assert exist_user.picture == "picture"
     assert exist_user.access_key == "accesskey"
 
     time_string = "2025-03-31T03:54:50.166954Z"
     dt = datetime.strptime(time_string, "%Y-%m-%dT%H:%M:%S.%fZ")
     dt_utc = dt.replace(tzinfo=timezone.utc)
+    stack = patched_user_service_factory(dt_utc)
 
-    with ExitStack() as stack:
-        _ = stack.enter_context(patch.object(tweepy.Client, "get_me", return_value=mock_user))
-        _ = stack.enter_context(patch("services.user_service._generate_access_key", return_value="accesskey"))
-        _ = stack.enter_context(patch("services.user_service._get_current_time", return_value=dt_utc))
+    with stack:
         response: Response = client.post("/users", json={"access_token": "abc"})
 
     assert response.status_code == 200
     assert response.json() == {
-        "xid": 123,
-        "screen_name": "sname",
-        "display_name": "dname",
+        "gid": "123",
+        "gname": "gname",
+        "picture": "picture",
         "access_key": "accesskey",
         "last_access_time": "2025-03-31T03:54:50.166954Z",
     }
 
-    updated_user: User | None = (await testdb.execute(select(User).filter_by(xid=123))).scalar_one_or_none()
+    updated_user: User | None = (await testdb.execute(select(User).filter_by(gid=123))).scalar_one_or_none()
     assert updated_user is not None
-    assert updated_user.screen_name == "sname"
-    assert updated_user.display_name == "dname"
+    assert updated_user.gname == "gname"
+    assert exist_user.picture == "picture"
     assert updated_user.access_key == "accesskey"
