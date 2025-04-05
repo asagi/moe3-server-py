@@ -1,19 +1,85 @@
-name: Notify Discord on Branch Update
+name: Notify Discord on Push
 
 on:
   push:
     branches:
-      - develop
+      - '**'  # すべてのブランチを監視
 
 jobs:
-  notify:
+  notify_push:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - name: Send Discord Notification
+      - name: コードを取得
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # すべての履歴を取得（必要）
+
+      - name: ブランチ名を取得
+        run: |
+          BRANCH_NAME=${GITHUB_REF#refs/heads/}
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+
+      - name: 直近のコミット情報を取得
+        run: |
+          echo "MESSAGE=$(git log -1 --pretty=%B)" >> $GITHUB_ENV
+          echo "COMMIT_URL=<${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}>" >> $GITHUB_ENV
+
+      - name: プッシュタイプの決定
+        run: |
+          if git log -1 --pretty=%B | grep -q "Merge"; then
+            echo "TYPE=merge" >> $GITHUB_ENV
+          elif git log -1 --pretty=%B | grep -q "Rebase"; then
+            echo "TYPE=rebase" >> $GITHUB_ENV
+          elif git log -1 --pretty=%B | grep -q "Fast-forward"; then
+            echo "TYPE=ff" >> $GITHUB_ENV
+          else
+            echo "TYPE=single" >> $GITHUB_ENV
+          fi
+
+      - name: Discord に通知
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          curl -H "Content-Type: application/json" \
+          if [ "${{ env.TYPE }}" = "merge" ]; then
+            ICON="🔀"
+            TITLE="Branch ${{ env.BRANCH_NAME }} was merged"
+            DESCRIPTION="Merged ${{ env.BRANCH_NAME }} into main."
+          elif [ "${{ env.TYPE }}" = "single" ]; then
+            ICON="✏️"
+            TITLE="Branch ${{ env.BRANCH_NAME }} was updated"
+            DESCRIPTION="${{ env.MESSAGE }}"
+          else
+            ICON="📦"
+            TITLE="Branch ${{ env.BRANCH_NAME }} was fast-forwarded or rebased"
+            DESCRIPTION="No commit message shown (as it is a rebase or fast-forward)"
+          fi
+
+          # メッセージの構成
+          JSON=$(jq -n \
+            --arg content "" \
+            --arg title "$TITLE" \
+            --arg description "$DESCRIPTION" \
+            --arg url "${{ env.COMMIT_URL }}" \
+            --arg icon "$ICON" \
+            '{
+              content: $icon,
+              embeds: [
+                {
+                  title: $title,
+                  description: $description,
+                  url: $url,
+                  color: 5814783
+                }
+              ]
+            }'
+          )
+
+          # JSONを確認（デバッグ）
+          echo "Generated JSON: $JSON"
+
+          # Discordへ通知を送信
+          curl -v -H "Content-Type: application/json" \
                -X POST \
-               -d "{\"content\": \"🚀 ブランチ 'main' に変更がありました！\n[変更を確認する](https://github.com/${{ github.repository }}/commits/main)\"}" \
+               -d "$JSON" \
                $DISCORD_WEBHOOK
