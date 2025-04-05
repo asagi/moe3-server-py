@@ -27,14 +27,15 @@ jobs:
 
       - name: プッシュタイプの決定
         run: |
-          if git log -1 --pretty=%B | grep -iq "created\|added"; then
+          # リベースの検出
+          if [ "$(git rev-list --count HEAD@{1}..HEAD)" -ge 1 ] && git reflog | grep -q "rebase"; then
+            echo "TYPE=rebase" >> $GITHUB_ENV
+          elif git log -1 --pretty=%B | grep -iq "created\|added"; then
             echo "TYPE=created" >> $GITHUB_ENV
           elif git log -1 --pretty=%B | grep -iq "updated\|modified"; then
             echo "TYPE=updated" >> $GITHUB_ENV
           elif git log -1 --pretty=%B | grep -q "Merge"; then
             echo "TYPE=merge" >> $GITHUB_ENV
-          elif git log -1 --pretty=%B | grep -q "Rebase"; then
-            echo "TYPE=rebase" >> $GITHUB_ENV
           elif git log -1 --pretty=%B | grep -q "Fast-forward"; then
             echo "TYPE=ff" >> $GITHUB_ENV
           else
@@ -45,7 +46,11 @@ jobs:
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
-          if [ "${{ env.TYPE }}" = "created" ]; then
+          if [ "${{ env.TYPE }}" = "rebase" ]; then
+            ICON="📦"
+            TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was rebased"
+            DESCRIPTION="Multiple commits were rebased and pushed."
+          elif [ "${{ env.TYPE }}" = "created" ]; then
             ICON="🌱"
             TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was created"
             DESCRIPTION="A new branch ${{ env.BRANCH_NAME }} was created."
@@ -57,10 +62,6 @@ jobs:
             ICON="🔀"
             TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was merged"
             DESCRIPTION="Merged ${{ env.BRANCH_NAME }} into main."
-          elif [ "${{ env.TYPE }}" = "rebase" ]; then
-            ICON="📦"
-            TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was rebased"
-            DESCRIPTION="No commit message shown (as it is a rebase)."
           elif [ "${{ env.TYPE }}" = "ff" ]; then
             ICON="📦"
             TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was fast-forwarded"
