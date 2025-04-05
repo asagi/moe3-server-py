@@ -60,5 +60,5 @@ async def test_login_exist_user(client: TestClient, testdb: AsyncSession, patche
     updated_user: User | None = (await testdb.execute(select(User).filter_by(gid=123))).scalar_one_or_none()
     assert updated_user is not None
     assert updated_user.gname == "gname"
-    assert exist_user.picture == "picture"
+    assert updated_user.picture == "picture"
     assert updated_user.access_key == "accesskey"
