@@ -43,26 +43,24 @@ jobs:
         run: |
           if [ "${{ env.TYPE }}" = "merge" ]; then
             ICON="🔀"
-            TITLE="Branch ${{ env.BRANCH_NAME }} was merged"
+            TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was merged"
             DESCRIPTION="Merged ${{ env.BRANCH_NAME }} into main."
           elif [ "${{ env.TYPE }}" = "single" ]; then
             ICON="✏️"
-            TITLE="Branch ${{ env.BRANCH_NAME }} was updated"
+            TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was updated"
             DESCRIPTION="${{ env.MESSAGE }}"
           else
             ICON="📦"
-            TITLE="Branch ${{ env.BRANCH_NAME }} was fast-forwarded or rebased"
+            TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was fast-forwarded or rebased"
             DESCRIPTION="No commit message shown (as it is a rebase or fast-forward)"
           fi
 
           # メッセージの構成
           JSON=$(jq -n \
-            --arg content "$ICON" \
             --arg title "$TITLE" \
             --arg description "$DESCRIPTION" \
             --arg url "${{ env.COMMIT_URL }}" \
             '{
-              content: $content,
               embeds: [
                 {
                   title: $title,
