@@ -24,6 +24,7 @@ jobs:
         run: |
           MESSAGE=$(git log -1 --pretty=%B)
           MESSAGE="${MESSAGE//\n/ }"
+          MESSAGE=$(echo "$MESSAGE" | sed 's/[#$]/\\&/g')
           echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
           echo "COMMIT_URL=${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${GITHUB_SHA}" >> $GITHUB_ENV
 
