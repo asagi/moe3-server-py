@@ -29,35 +29,40 @@ jobs:
 
       - name: プッシュタイプの決定
         run: |
-          # 現在のブランチ名を取得
           BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
           BRANCH_CREATED=false
+          MERGE_DETECTED=false
 
-          # 新規ブランチの作成を検出
-          # ブランチ作成の最初のコミットを検出
-          if git log --oneline --decorate -n 1 | grep -q "initial commit"; then
+          # 新規ブランチ作成の検出
+          # 現在のブランチが他のブランチに含まれていないか、初回コミットか確認
+          if ! git branch --contains HEAD | grep -q 'main\|develop'; then
+            # 新規ブランチとして判定
             BRANCH_CREATED=true
-          fi
-
-          # 新規ブランチ作成が確認できた場合
-          if [ "$BRANCH_CREATED" = true ]; then
             echo "TYPE=created" >> $GITHUB_ENV
             echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
-          elif git log -1 --merges --pretty=%B; then
-            # マージがあれば、マージの詳細を取得
-            MERGE_STATUS=$(git log -1 --merges --pretty=%B)
-            MERGE_BASE=$(git merge-base HEAD $(git rev-parse --abbrev-ref HEAD))
-            BASE_BRANCH=$(git rev-parse --abbrev-ref $MERGE_BASE)
-            TARGET_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          fi
+
+          # マージ操作の判定
+          # マージコミットのメッセージを確認
+          if git log -1 --pretty=%B | grep -q "Merge"; then
+            # マージメッセージが含まれている場合
+            MERGE_DETECTED=true
+            BASE_BRANCH=$(git log -1 --pretty=%B | sed -n "s/^Merge remote-tracking branch 'origin\/\(.*\)' into \(.*\)/\2/p")
+            TARGET_BRANCH=$(git log -1 --pretty=%B | sed -n "s/^Merge remote-tracking branch 'origin\/\(.*\)' into \(.*\)/\1/p")
             echo "TYPE=merge" >> $GITHUB_ENV
             echo "BASE_BRANCH=$BASE_BRANCH" >> $GITHUB_ENV
             echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
-          elif git diff --quiet HEAD^ HEAD; then
-            # 差分がない場合
-            echo "TYPE=ff" >> $GITHUB_ENV
-          else
-            # 他のプッシュの場合（通常の更新）
+          fi
+
+          # 更新の判定（差分がある場合）
+          if ! git diff --quiet HEAD^ HEAD && ! $MERGE_DETECTED; then
             echo "TYPE=updated" >> $GITHUB_ENV
+            echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          fi
+
+          # Fast-forward の判定（差分がない場合）
+          if git diff --quiet HEAD^ HEAD && ! $MERGE_DETECTED; then
+            echo "TYPE=ff" >> $GITHUB_ENV
           fi
 
       - name: Discord に通知
