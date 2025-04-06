@@ -119,7 +119,9 @@ class Phase(Base):
     def _should_skip_next_phase(self, _active_powers: set[Power]) -> bool:
         return False
 
-    def end(self, active_powers: set[Power] = set()) -> Self | None:
+    def end(self, active_powers: set[Power] = None) -> Self | None:
+        if active_powers is None:
+            active_powers = set()
         # TODO: 和平判定
         # 和平条件成立なら感想戦フェイズを生成して返却
 
