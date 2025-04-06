@@ -3,12 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.game_table_model import GameTable
 from models.order_model import Order
-from models.phase_model import Phase
+from models.phase_model import DebriefPhase, Phase
 from models.user_model import User
 
 
 async def test_ready_phase_creation(master_data: AsyncSession) -> None:
-    new_user = User(gid="123", gname="test", picture="https://lh3.googleusercontent.com/a/default-user")
+    new_user = User(gid="123", gname="test", picture="picture")
     new_table = await GameTable.create_with_phases(new_user)
     ready_phase = new_table.phases[0]
     assert ready_phase is not None
@@ -18,7 +18,7 @@ async def test_ready_phase_creation(master_data: AsyncSession) -> None:
 
 
 async def test_phase_relation(master_data: AsyncSession) -> None:
-    new_user = User(gid="123", gname="test", picture="https://lh3.googleusercontent.com/a/default-user")
+    new_user = User(gid="123", gname="test", picture="picture")
     new_table = await GameTable.create_with_phases(new_user)
     first_phase = new_table.phases[0]
     assert first_phase is not None
@@ -32,7 +32,7 @@ async def test_phase_relation(master_data: AsyncSession) -> None:
 
 
 async def test_phase_status(master_data: AsyncSession) -> None:
-    new_user = User(gid="123", gname="test", picture="https://lh3.googleusercontent.com/a/default-user")
+    new_user = User(gid="123", gname="test", picture="picture")
     new_table = await GameTable.create_with_phases(new_user)
     first_phase = new_table.phases[0]
     assert first_phase is not None
@@ -45,7 +45,7 @@ async def test_phase_status(master_data: AsyncSession) -> None:
 
 
 async def test_phase_year(master_data: AsyncSession) -> None:
-    new_user = User(gid="123", gname="test", picture="https://lh3.googleusercontent.com/a/default-user")
+    new_user = User(gid="123", gname="test", picture="picture")
     new_table = await GameTable.create_with_phases(new_user)
     first_phase = new_table.phases[0]
     assert first_phase is not None
@@ -66,7 +66,7 @@ async def test_phase_year(master_data: AsyncSession) -> None:
 
 
 async def test_phase_order_initialization(master_data: AsyncSession) -> None:
-    new_user = User(gid="123", gname="test", picture="https://lh3.googleusercontent.com/a/default-user")
+    new_user = User(gid="123", gname="test", picture="picture")
     new_table = await GameTable.create_with_phases(new_user)
     first_phase = new_table.phases[0]
     assert first_phase is not None
@@ -77,3 +77,9 @@ async def test_phase_order_initialization(master_data: AsyncSession) -> None:
     assert len(second_phase.latest_units) == 22
     assert len(second_phase.orders) == 22
     assert all(order.status == Order.Status.UNRESOLVED for order in second_phase.orders)
+
+
+async def test_debrief_phase(master_data: AsyncSession) -> None:
+    phase = DebriefPhase()
+    next_phase = phase.end()
+    assert next_phase is None
