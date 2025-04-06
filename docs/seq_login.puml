@@ -5,16 +5,16 @@ actor User
 Participant frontend as FE
 Participant backend as BE
 Participant database as DB
-Participant twitter as TW
+Participant provider as OP
 
 User -> FE : login operation
-    FE -> TW : oauth request
-        TW -> User : show auth page
-        User -> TW : accept operation
-    TW -> FE : twitter api access token
-    FE -> BE : twitter api access token
-        BE -> TW : twitter api access token
-        TW -> BE : user data
+    FE -> OP : oauth request
+        OP -> User : show auth page
+        User -> OP : accept operation
+    OP -> FE : provider api access token
+    FE -> BE : provider api access token
+        BE -> OP : provider api access token
+        OP -> BE : user data
         BE -> DB : query user data
 == first login ==
         DB -> BE : "not found"
