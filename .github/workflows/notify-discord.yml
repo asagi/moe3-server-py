@@ -43,15 +43,13 @@ jobs:
           fi
 
           # マージ操作の判定
-          # マージコミットのメッセージを確認
-          if git log -1 --pretty=%B | grep -q "Merge"; then
-            # マージメッセージが含まれている場合
+          # git log -1 を使ってマージコミットを判定
+          if git log -1 | grep -q "^Merge:"; then
+            # マージコミットとして処理
             MERGE_DETECTED=true
-            BASE_BRANCH=$(git log -1 --pretty=%B | sed -n "s/^Merge remote-tracking branch 'origin\/\(.*\)' into \(.*\)/\2/p")
-            TARGET_BRANCH=$(git log -1 --pretty=%B | sed -n "s/^Merge remote-tracking branch 'origin\/\(.*\)' into \(.*\)/\1/p")
+            COMMIT_MESSAGE=$(git log -1 --pretty=%B)
             echo "TYPE=merge" >> $GITHUB_ENV
-            echo "BASE_BRANCH=$BASE_BRANCH" >> $GITHUB_ENV
-            echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
+            echo "COMMIT_MESSAGE=$COMMIT_MESSAGE" >> $GITHUB_ENV
           fi
 
           # 更新の判定（差分がある場合）
