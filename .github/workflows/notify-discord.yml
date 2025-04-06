@@ -83,7 +83,7 @@ jobs:
           elif [ "$TYPE" = "merge" ]; then
             ICON="🔀"
             TITLE="$ICON Branch $BRANCH_NAME was merged"
-            DESCRIPTION="Merged $BASE_BRANCH into $TARGET_BRANCH."
+            DESCRIPTION=$MESSAGE"
           elif [ "$TYPE" = "ff" ]; then
             ICON="📦"
             TITLE="$ICON Branch $BRANCH_NAME was fast-forwarded"
