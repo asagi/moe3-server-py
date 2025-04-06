@@ -119,7 +119,7 @@ class Phase(Base):
     def _should_skip_next_phase(self, _active_powers: set[Power]) -> bool:
         return False
 
-    def end(self, active_powers: set[Power] = set()) -> Self:
+    def end(self, active_powers: set[Power] = set()) -> Self | None:
         # TODO: 和平判定
         # 和平条件成立なら感想戦フェイズを生成して返却
 
@@ -323,4 +323,7 @@ class DebriefPhase(Phase):
     __mapper_args__ = {
         "polymorphic_identity": "debrief",
     }
-    # TODO: 感想戦フェイズ実装（issue#23）
+
+    @override
+    def end(self, active_powers: set[Power] = set()) -> Self | None:
+        return None
