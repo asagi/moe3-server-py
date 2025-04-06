@@ -46,6 +46,7 @@ async def test_01__resolve_marching_orders_1901_spring(master_data: AsyncSession
     phase.orders.extend([ta_smy_con, tf_ank_bla, ta_con_bul])
 
     new_phase = phase.end()
+    assert new_phase is not None
     assert new_phase.type == "fall_order"
     assert new_phase.year == 1901
     assert aa_vie_gal.status == Order.Status.FAILURE
@@ -106,6 +107,7 @@ async def test_02__resolve_marching_orders_1901_fall(master_data: AsyncSession) 
     phase.orders.extend([ta_con_bul, tf_ank_bla, ta_bul_gre])
 
     new_phase = phase.end()
+    assert new_phase is not None
     assert new_phase.type == "adjustment"
     assert new_phase.year == 1901
     assert aa_vie_tyr.status == Order.Status.FAILURE
@@ -177,6 +179,7 @@ async def test_03__resolve_marching_orders_1902_spring(master_data: AsyncSession
     phase.orders.extend([tf_smy_aeg, ta_con_bul, ta_bul_gre, tf_bla_rum])
 
     new_phase = phase.end()
+    assert new_phase is not None
     assert new_phase.type == "spring_retreat"
     assert new_phase.year == 1902
     assert af_tri_ven.status == Order.Status.FAILURE
@@ -256,6 +259,7 @@ async def test_04__resolve_marching_orders_1902_fall(master_data: AsyncSession) 
     phase.orders.extend([ta_bul_gre, tf_aeg_supp, ta_con_bul, tf_bla_rum])
 
     new_phase = phase.end()
+    assert new_phase is not None
     assert new_phase.type == "fall_retreat"
     assert new_phase.year == 1902
     assert aa_tyr_ven.status == Order.Status.SUCCESS
@@ -336,6 +340,7 @@ async def test_05__resolve_marching_orders_1903_spring(master_data: AsyncSession
     phase.orders.extend([tf_aeg_ion, tf_smy_eas, ta_gre_ser, ta_bul_supp, tf_bla_supp])
 
     new_phase = phase.end()
+    assert new_phase is not None
     assert new_phase.type == "fall_order"
     assert new_phase.year == 1903
     assert aa_ser_tri.status == Order.Status.SUCCESS
@@ -423,6 +428,7 @@ async def test_06__resolve_marching_orders_1903_fall(master_data: AsyncSession) 
     phase.orders.extend([tf_ion_hold, tf_eas_supp, ta_ser_supp, tf_bla_supp, ta_bul_supp])
 
     new_phase = phase.end()
+    assert new_phase is not None
     assert new_phase.type == "fall_retreat"
     assert new_phase.year == 1903
     assert af_adr_ven.status == Order.Status.FAILURE

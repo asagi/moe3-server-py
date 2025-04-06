@@ -119,9 +119,17 @@ class Phase(Base):
     def _should_skip_next_phase(self, _active_powers: set[Power]) -> bool:
         return False
 
-    def end(self, active_powers: set[Power] = set()) -> Self:
+    def end(self, active_powers: set[Power] = None) -> Self | None:
+        if active_powers is None:
+            active_powers = set()
+        # TODO: 和平判定
+        # 和平条件成立なら感想戦フェイズを生成して返却
+
         self._resolve_orders()
         self._occupy()
+
+        # TODO: 制覇判定
+        # 誰かが制覇勝利したら感想戦フェイズを生成して返却
 
         new_phase = self._create_next_phase()
 
@@ -311,3 +319,13 @@ class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
             for t in self.latest_territories[:]:
                 if t.occupier == p:
                     self.latest_territories.remove(t)
+
+
+class DebriefPhase(Phase):
+    __mapper_args__ = {
+        "polymorphic_identity": "debrief",
+    }
+
+    @override
+    def end(self, active_powers: set[Power] = set()) -> Self | None:
+        return None
