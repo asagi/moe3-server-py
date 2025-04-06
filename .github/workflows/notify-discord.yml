@@ -34,7 +34,13 @@ jobs:
           elif git log -1 --pretty=%B | grep -iq "updated\|modified"; then
             echo "TYPE=updated" >> $GITHUB_ENV
           elif git log -1 --pretty=%B | grep -q "Merge"; then
+            # マージメッセージを処理
+            MERGE_MESSAGE=$(git log -1 --pretty=%B)
+            BASE_BRANCH=$(echo "$MERGE_MESSAGE" | sed -n "s/^Merge remote-tracking branch 'origin\/\(.*\)' into \(.*\)/\2/p")
+            TARGET_BRANCH=$(echo "$MERGE_MESSAGE" | sed -n "s/^Merge remote-tracking branch 'origin\/\(.*\)' into \(.*\)/\1/p")
             echo "TYPE=merge" >> $GITHUB_ENV
+            echo "BASE_BRANCH=$BASE_BRANCH" >> $GITHUB_ENV
+            echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
           elif git log -1 --pretty=%B | grep -q "Fast-forward"; then
             echo "TYPE=ff" >> $GITHUB_ENV
           else
@@ -47,6 +53,8 @@ jobs:
           BRANCH_NAME: ${{ env.BRANCH_NAME }}
           MESSAGE: ${{ env.MESSAGE }}
           COMMIT_URL: ${{ env.COMMIT_URL }}
+          BASE_BRANCH: ${{ env.BASE_BRANCH }}
+          TARGET_BRANCH: ${{ env.TARGET_BRANCH }}
         run: |
           if [ "$TYPE" = "created" ]; then
             ICON="🌱"
@@ -59,7 +67,7 @@ jobs:
           elif [ "$TYPE" = "merge" ]; then
             ICON="🔀"
             TITLE="$ICON Branch $BRANCH_NAME was merged"
-            DESCRIPTION="Merged $BRANCH_NAME into main."
+            DESCRIPTION="Merged $BASE_BRANCH into $TARGET_BRANCH."
           elif [ "$TYPE" = "ff" ]; then
             ICON="📦"
             TITLE="$ICON Branch $BRANCH_NAME was fast-forwarded"
