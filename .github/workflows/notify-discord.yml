@@ -29,15 +29,17 @@ jobs:
 
       - name: プッシュタイプの決定
         run: |
-          # 新規ブランチ作成の検出
+          # 現在のブランチ名を取得
           BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
           BRANCH_CREATED=false
 
-          # reflogで新規ブランチ作成を検出
-          if git reflog show --date=iso | grep -q "checkout: moving from"; then
+          # 新規ブランチの作成を検出
+          # ブランチ作成の最初のコミットを検出
+          if git log --oneline --decorate -n 1 | grep -q "initial commit"; then
             BRANCH_CREATED=true
           fi
 
+          # 新規ブランチ作成が確認できた場合
           if [ "$BRANCH_CREATED" = true ]; then
             echo "TYPE=created" >> $GITHUB_ENV
             echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
