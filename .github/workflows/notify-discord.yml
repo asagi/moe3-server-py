@@ -9,8 +9,6 @@ jobs:
   notify_push:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    env:
-      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
     steps:
       - name: コードを取得
         uses: actions/checkout@v4
@@ -96,4 +94,4 @@ jobs:
           curl -v -H "Content-Type: application/json" \
                -X POST \
                -d "$JSON" \
-               $DISCORD_WEBHOOK
+               ${{ secrets.DISCORD_WEBHOOK }}
