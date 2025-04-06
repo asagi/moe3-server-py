@@ -3,7 +3,7 @@ name: Notify Discord on Push
 on:
   push:
     branches:
-      - '**'  # すべてのブランチを監視
+      - '**'
 
 jobs:
   notify_push:
@@ -13,7 +13,7 @@ jobs:
       - name: コードを取得
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # すべての履歴を取得（必要）
+          fetch-depth: 0
 
       - name: ブランチ名を取得
         run: |
@@ -29,22 +29,33 @@ jobs:
 
       - name: プッシュタイプの決定
         run: |
-          if git log -1 --pretty=%B | grep -iq "created\|added"; then
+          # 新規ブランチ作成の検出
+          BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
+          BRANCH_CREATED=false
+
+          # reflogで新規ブランチ作成を検出
+          if git reflog show --date=iso | grep -q "checkout: moving from"; then
+            BRANCH_CREATED=true
+          fi
+
+          if [ "$BRANCH_CREATED" = true ]; then
             echo "TYPE=created" >> $GITHUB_ENV
-          elif git log -1 --pretty=%B | grep -iq "updated\|modified"; then
-            echo "TYPE=updated" >> $GITHUB_ENV
-          elif git log -1 --pretty=%B | grep -q "Merge"; then
-            # マージメッセージを処理
-            MERGE_MESSAGE=$(git log -1 --pretty=%B)
-            BASE_BRANCH=$(echo "$MERGE_MESSAGE" | sed -n "s/^Merge remote-tracking branch 'origin\/\(.*\)' into \(.*\)/\2/p")
-            TARGET_BRANCH=$(echo "$MERGE_MESSAGE" | sed -n "s/^Merge remote-tracking branch 'origin\/\(.*\)' into \(.*\)/\1/p")
+            echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_ENV
+          elif git log -1 --merges --pretty=%B; then
+            # マージがあれば、マージの詳細を取得
+            MERGE_STATUS=$(git log -1 --merges --pretty=%B)
+            MERGE_BASE=$(git merge-base HEAD $(git rev-parse --abbrev-ref HEAD))
+            BASE_BRANCH=$(git rev-parse --abbrev-ref $MERGE_BASE)
+            TARGET_BRANCH=$(git rev-parse --abbrev-ref HEAD)
             echo "TYPE=merge" >> $GITHUB_ENV
             echo "BASE_BRANCH=$BASE_BRANCH" >> $GITHUB_ENV
             echo "TARGET_BRANCH=$TARGET_BRANCH" >> $GITHUB_ENV
-          elif git log -1 --pretty=%B | grep -q "Fast-forward"; then
+          elif git diff --quiet HEAD^ HEAD; then
+            # 差分がない場合
             echo "TYPE=ff" >> $GITHUB_ENV
           else
-            echo "TYPE=single" >> $GITHUB_ENV
+            # 他のプッシュの場合（通常の更新）
+            echo "TYPE=updated" >> $GITHUB_ENV
           fi
 
       - name: Discord に通知
