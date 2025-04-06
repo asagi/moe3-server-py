@@ -44,27 +44,31 @@ jobs:
       - name: Discord に通知
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          TYPE: ${{ env.TYPE }}
+          BRANCH_NAME: ${{ env.BRANCH_NAME }}
+          MESSAGE: ${{ env.MESSAGE }}
+          COMMIT_URL: ${{ env.COMMIT_URL }}
         run: |
-          if [ "${{ env.TYPE }}" = "created" ]; then
+          if [ "$TYPE" = "created" ]; then
             ICON="🌱"
-            TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was created"
-            DESCRIPTION="A new branch ${{ env.BRANCH_NAME }} was created."
-          elif [ "${{ env.TYPE }}" = "updated" ]; then
+            TITLE="$ICON Branch $BRANCH_NAME was created"
+            DESCRIPTION="A new branch $BRANCH_NAME was created."
+          elif [ "$TYPE" = "updated" ]; then
             ICON="✏️"
-            TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was updated"
-            DESCRIPTION="${{ env.MESSAGE }}"
-          elif [ "${{ env.TYPE }}" = "merge" ]; then
+            TITLE="$ICON Branch $BRANCH_NAME was updated"
+            DESCRIPTION="$MESSAGE"
+          elif [ "$TYPE" = "merge" ]; then
             ICON="🔀"
-            TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was merged"
-            DESCRIPTION="Merged ${{ env.BRANCH_NAME }} into main."
-          elif [ "${{ env.TYPE }}" = "ff" ]; then
+            TITLE="$ICON Branch $BRANCH_NAME was merged"
+            DESCRIPTION="Merged $BRANCH_NAME into main."
+          elif [ "$TYPE" = "ff" ]; then
             ICON="📦"
-            TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was fast-forwarded"
+            TITLE="$ICON Branch $BRANCH_NAME was fast-forwarded"
             DESCRIPTION="No commit message shown (as it is a fast-forward)."
           else
             ICON="✏️"
-            TITLE="$ICON Branch ${{ env.BRANCH_NAME }} was updated"
-            DESCRIPTION="${{ env.MESSAGE }}"
+            TITLE="$ICON Branch $BRANCH_NAME was updated"
+            DESCRIPTION="$MESSAGE"
           fi
 
           # メッセージの構成
