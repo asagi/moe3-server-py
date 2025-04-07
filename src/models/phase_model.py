@@ -204,7 +204,8 @@ class RetreatPhase(Phase):
 
     @override
     def _resolve_orders(self) -> None:
-        return
+        # TODO: 撤退命令の解決
+        ...
 
 
 class SpringOrderPhase(OrderPhase):
