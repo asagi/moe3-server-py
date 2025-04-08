@@ -313,7 +313,7 @@ class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
     @override
     def _occupy(self) -> None:
         for p in Power.all():
-            supplycenters_of_power: list[Territory] = [t for t in self.latest_territories if t.occupier == p and t.province.suppliable]
+            supplycenters_of_power: list[Territory] = [t for t in self.latest_territories if t.occupier == p and t.suppliable]
             if len(supplycenters_of_power) > 0:
                 continue
 

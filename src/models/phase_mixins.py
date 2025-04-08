@@ -128,7 +128,7 @@ class BeforeAdjustmentPhaseMixin:
         for power in Power.all():
             units_of_power: list[Unit] = [u for u in units if u.power == power]
             unit_count: int = len(units_of_power)
-            supplycenters_of_power: list[Province] = [t.province for t in territories if t.occupier == power and t.province.suppliable]
+            supplycenters_of_power: list[Province] = [t.province for t in territories if t.occupier == power and t.suppliable]
             capacity: int = len(supplycenters_of_power)
 
             if unit_count > capacity:
@@ -142,7 +142,7 @@ class BeforeAdjustmentPhaseMixin:
         for power in powers:
             units_of_power: list[Unit] = [u for u in units if u.power == power]
             unit_count: int = len(units_of_power)
-            suppliable_provinces_of_power: list[Province] = [t.province for t in territories if t.occupier == power and t.province.suppliable]
+            suppliable_provinces_of_power: list[Province] = [t.province for t in territories if t.occupier == power and t.suppliable]
             supplycenter_count: int = len(suppliable_provinces_of_power)
 
             if supplycenter_count == 0:
