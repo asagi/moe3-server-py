@@ -26,3 +26,7 @@ class Territory(Base):
     def __init__(self, province: Province, occupier: Power) -> None:
         self.province = province
         self.occupier = occupier
+
+    @property
+    def suppliable(self) -> bool:
+        return self.province.suppliable

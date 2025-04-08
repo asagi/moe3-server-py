@@ -108,7 +108,7 @@ class Path(Base):
         # 各国補給都市
         supply_centers: dict[Power, set[str]] = defaultdict(set)  # abbrの先頭3文字で格納
         for territory in territories:
-            if territory.province.suppliable and territory.occupier:
+            if territory.suppliable and territory.occupier:
                 supply_centers[territory.occupier].add(territory.province.abbr[:3])
 
         # 各ユニットの最短距離を計算
