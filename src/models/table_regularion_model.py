@@ -28,15 +28,19 @@ class TableRegulation(Base):
     duration_type: Mapped[DurationType] = mapped_column(Enum(DurationType), nullable=False)
     start_time: Mapped[datetime] = mapped_column(nullable=False)
 
-    _duration: Duration
-
     def __init__(self, face_type: FaceType, duration_type: DurationType, start_time: datetime) -> None:
-        self.face_type = face_type
-        self.duration_type = duration_type
+        if face_type not in self.FaceType:
+            raise ValueError(f"Invalid face type: {face_type}")
+
+        if duration_type not in self.DurationType:
+            raise ValueError(f"Invalid duration type: {duration_type}")
+
+        self.face_type = TableRegulation.FaceType(face_type)
+        self.duration_type = TableRegulation.DurationType(duration_type)
         self.start_time = start_time
 
-        match duration_type:
-            case self.DurationType.FIXED_MIDDLE:
-                self._duration = fixed_middle_duration
-            case self.DurationType.FLEX_SHORT:
-                self._duration = flex_short_duration
+        match self.duration_type:
+            case TableRegulation.DurationType.FIXED_MIDDLE:
+                self._duration: Duration = fixed_middle_duration
+            case TableRegulation.DurationType.FLEX_SHORT:
+                self._duration: Duration = flex_short_duration
