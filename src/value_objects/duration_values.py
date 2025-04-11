@@ -24,7 +24,7 @@ flex_short_duration = Duration(
 )
 
 fixed_middle_duration = Duration(
-    due_mode=DueMode.FLEXIBLE,
+    due_mode=DueMode.FIXED,
     order_phase=60 * 24,
     retreat_phase=60,
     adjustment_phase=60,
