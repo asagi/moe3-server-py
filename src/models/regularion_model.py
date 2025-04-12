@@ -13,7 +13,7 @@ from value_objects.duration_values import (
 
 
 class Regulation(Base):
-    __tablename__ = "table_regulations"
+    __tablename__ = "regulations"
 
     class FaceType(enum.Enum):
         GIRLS = 1
