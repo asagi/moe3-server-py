@@ -12,7 +12,7 @@ from value_objects.duration_values import (
 )
 
 
-class TableRegulation(Base):
+class Regulation(Base):
     __tablename__ = "table_regulations"
 
     class FaceType(enum.Enum):
@@ -35,12 +35,12 @@ class TableRegulation(Base):
         if duration_type not in self.DurationType:
             raise ValueError(f"Invalid duration type: {duration_type}")
 
-        self.face_type = TableRegulation.FaceType(face_type)
-        self.duration_type = TableRegulation.DurationType(duration_type)
+        self.face_type = Regulation.FaceType(face_type)
+        self.duration_type = Regulation.DurationType(duration_type)
         self.start_time = start_time
 
         match self.duration_type:
-            case TableRegulation.DurationType.FIXED_MIDDLE:
+            case Regulation.DurationType.FIXED_MIDDLE:
                 self._duration: Duration = fixed_middle_duration
-            case TableRegulation.DurationType.FLEX_SHORT:
+            case Regulation.DurationType.FLEX_SHORT:
                 self._duration: Duration = flex_short_duration
