@@ -47,9 +47,9 @@ class Regulation(Base):
 
         match self.duration_type:
             case Regulation.DurationType.FIXED_MIDDLE:
-                self._duration: Duration = fixed_middle_duration
+                self.duration: Duration = fixed_middle_duration
             case Regulation.DurationType.FLEX_SHORT:
-                self._duration: Duration = flex_short_duration
+                self.duration: Duration = flex_short_duration
 
     def get_order_phase_duration(self) -> int:
         return self._duration.order_phase

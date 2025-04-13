@@ -1,19 +1,100 @@
+from datetime import datetime
+
+import pytest
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.game_table_model import GameTable
+from models.phase_model import Phase
+from models.regularion_model import Regulation
 from models.user_model import User
 
 
-async def test_table_creation(master_data: AsyncSession) -> None:
-    new_user = User(gid="123", gname="test", picture="https://lh3.googleusercontent.com/a/default-user")
+@pytest.fixture
+async def table01(master_data: AsyncSession) -> GameTable:
+    new_user = User(gid="123", gname="test", picture="picture")
     new_table = await GameTable.create_with_phases(new_user)
     master_data.add(new_table)
     await master_data.commit()
-    user: User | None = (await master_data.execute(select(User).filter_by(gid=123))).scalar_one_or_none()
-    assert user is not None
-    table: GameTable | None = (await master_data.execute(select(GameTable).filter_by(user_id=user.id))).scalar_one_or_none()
+    return new_table
+
+
+@pytest.fixture
+async def table02(master_data: AsyncSession) -> GameTable:
+    face_type = Regulation.FaceType.GIRLS
+    duration_type = Regulation.DurationType.FIXED_MIDDLE
+    satrt_time = datetime.strptime("2025-04-13T11:00:00.000Z", "%Y-%m-%dT%H:%M:%S.%fZ")
+    regulation = Regulation(face_type, duration_type, satrt_time)
+    new_table = await GameTable.create_with_phases(None, regulation)
+    master_data.add(new_table)
+    await master_data.commit()
+    return new_table
+
+
+@pytest.fixture
+async def table03(master_data: AsyncSession) -> GameTable:
+    new_user = User(gid="123", gname="test", picture="picture")
+    face_type = Regulation.FaceType.FLAGS
+    duration_type = Regulation.DurationType.FLEX_SHORT
+    satrt_time = datetime.strptime("2025-04-13T11:00:00.000Z", "%Y-%m-%dT%H:%M:%S.%fZ")
+    regulation = Regulation(face_type, duration_type, satrt_time)
+    new_table = await GameTable.create_with_phases(new_user, regulation)
+    master_data.add(new_table)
+    await master_data.commit()
+    return new_table
+
+
+async def test_table_creation_01(master_data: AsyncSession, table01: GameTable) -> None:
+    table: GameTable | None = (await master_data.execute(select(GameTable).filter_by(id=table01.id))).scalar_one_or_none()
     assert table is not None
-    assert table.user_id == user.id
-    assert user.tables[0].id == table.id
     assert len(table.phases) == 1
+    phase = table.phases[-1]
+    assert phase is not None
+    assert phase.type == "ready"
+    assert phase.status == Phase.Status.OPEN
+    assert table.owner is not None
+    assert table.owner.gid == "123"
+
+
+async def test_table_creation_02(master_data: AsyncSession, table02: GameTable) -> None:
+    table: GameTable | None = (await master_data.execute(select(GameTable).filter_by(id=table02.id))).scalar_one_or_none()
+    assert table is not None
+    assert len(table.phases) == 1
+    phase = table.phases[-1]
+    assert phase is not None
+    assert phase.type == "ready"
+    assert phase.status == Phase.Status.OPEN
+    assert table.regulation is not None
+    assert table.regulation.face_type == Regulation.FaceType.GIRLS
+    assert table.regulation.duration_type == Regulation.DurationType.FIXED_MIDDLE
+
+
+async def test_table_creation_03(master_data: AsyncSession, table03: GameTable) -> None:
+    table: GameTable | None = (await master_data.execute(select(GameTable).filter_by(id=table03.id))).scalar_one_or_none()
+    assert table is not None
+    assert len(table.phases) == 1
+    phase = table.phases[-1]
+    assert phase is not None
+    assert phase.type == "ready"
+    assert phase.status == Phase.Status.OPEN
+    assert table.owner is not None
+    assert table.owner.gid == "123"
+    assert table.regulation is not None
+    assert table.regulation.face_type == Regulation.FaceType.FLAGS
+    assert table.regulation.duration_type == Regulation.DurationType.FLEX_SHORT
+
+
+async def test_table_regulation_fixed_middle_01(master_data: AsyncSession, table02: GameTable) -> None:
+    phase = table02.phases[-1]
+    new_phase = phase.end()
+    assert new_phase is not None
+    assert new_phase.type == "spring_order"
+    assert new_phase.due_time == datetime(2025, 4, 14, 11, 0)
+
+
+async def test_table_regulation_flex_short_01(master_data: AsyncSession, table03: GameTable) -> None:
+    phase = table03.phases[-1]
+    new_phase = phase.end()
+    assert new_phase is not None
+    assert new_phase.type == "spring_order"
+    assert new_phase.due_time == datetime(2025, 4, 13, 12, 0)

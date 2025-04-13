@@ -18,25 +18,26 @@ class GameTable(Base):
     __tablename__ = "game_tables"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
+    user_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"))
     regulation_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("regulations.id"), nullable=True)
 
-    owner: Mapped[User] = relationship("User", foreign_keys=[user_id], back_populates="tables")
+    owner: Mapped[User | None] = relationship("User", foreign_keys=[user_id], back_populates="tables")
     players: Mapped[list["Player"]] = relationship("Player", back_populates="table")
     phases: Mapped[list["Phase"]] = relationship("Phase", back_populates="table")
     regulation: Mapped[Regulation | None] = relationship("Regulation", back_populates="table", uselist=False)
 
     @classmethod
-    async def create_with_phases(cls, owner: User) -> Self:
+    async def create_with_phases(cls, owner: User | None = None, regulation: Regulation | None = None) -> Self:
         from models.phase_model import Phase
 
-        instance = cls(owner)
+        instance = cls(owner, regulation)
         ready_phase: Phase = Phase.create_ready_phase()
         instance.phases.append(ready_phase)
         return instance
 
-    def __init__(self, owner: User) -> None:
+    def __init__(self, owner: User | None = None, regulation: Regulation | None = None) -> None:
         self.owner = owner
+        self.regulation = regulation
 
     @property
     def due_mode(self) -> DueMode | None:

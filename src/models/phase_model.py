@@ -104,7 +104,7 @@ class Phase(Base):
         raise NotImplementedError("This method should be overridden")
 
     def _resolve_orders(self) -> None:
-        raise NotImplementedError("This method should be overridden")
+        pass
 
     def _occupy(self) -> None:
         pass
