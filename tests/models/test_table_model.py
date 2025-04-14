@@ -88,64 +88,83 @@ async def test_table_creation_03(master_data: AsyncSession, table03: GameTable) 
 
 
 async def test_table_regulation_fixed_middle_01(master_data: AsyncSession, table02: GameTable) -> None:
-    phase = table02.phases[-1]
-    new_phase = phase.end()
-    assert new_phase is not None
-    assert new_phase.type == "spring_order"
-    assert new_phase.due_time == datetime(2025, 4, 14, 11, 0)
+    ready_phase = table02.phases[-1]
+    spring_order_1901 = ready_phase.end()
+    assert spring_order_1901 is not None
+    assert spring_order_1901.type == "spring_order"
+    assert spring_order_1901.due_time == datetime(2025, 4, 14, 11, 0)
 
 
 async def test_table_regulation_fixed_middle_02(master_data: AsyncSession, table02: GameTable) -> None:
-    phase = table02.phases[-1]
-    new_phase = phase.end()
-    assert new_phase is not None
+    ready_phase = table02.phases[-1]
+    spring_order_1901 = ready_phase.end()
+    assert spring_order_1901 is not None
+    assert spring_order_1901.due_time == datetime(2025, 4, 14, 11, 0)
     with ExitStack() as stack:
-        _ = stack.enter_context(patch.object(new_phase, "_should_skip_next_phase", return_value=False))
-        next_phase = new_phase.end()
-        assert next_phase is not None
-        assert next_phase.type == "spring_retreat"
-        assert next_phase.due_time == datetime(2025, 4, 14, 12, 0)
+        _ = stack.enter_context(patch.object(spring_order_1901, "_should_skip_next_phase", return_value=False))
+        spring_retreat_1901 = spring_order_1901.end()
+        assert spring_retreat_1901 is not None
+        assert spring_retreat_1901.type == "spring_retreat"
+        assert spring_retreat_1901.due_time == datetime(2025, 4, 14, 12, 0)
+
+
+async def test_table_regulation_fixed_middle_03(master_data: AsyncSession, table02: GameTable) -> None:
+    ready_phase = table02.phases[-1]
+    spring_order_1901 = ready_phase.end()
+    assert spring_order_1901 is not None
+    assert spring_order_1901.due_time == datetime(2025, 4, 14, 11, 0)
+    with ExitStack() as stack:
+        _ = stack.enter_context(patch.object(spring_order_1901, "_should_skip_next_phase", return_value=False))
+        spring_retreat_1901 = spring_order_1901.end()
+        assert spring_retreat_1901 is not None
+        assert spring_retreat_1901.due_time == datetime(2025, 4, 14, 12, 0)
+
+        _ = stack.enter_context(patch.object(spring_retreat_1901, "_should_skip_next_phase", return_value=False))
+        fall_order_1901 = spring_retreat_1901.end()
+        assert fall_order_1901 is not None
+        assert fall_order_1901.type == "fall_order"
+        assert fall_order_1901.due_time == datetime(2025, 4, 15, 11, 0)
 
 
 async def test_table_regulation_flex_short_01(master_data: AsyncSession, table03: GameTable) -> None:
-    phase = table03.phases[-1]
-    new_phase = phase.end()
-    assert new_phase is not None
-    assert new_phase.type == "spring_order"
-    assert new_phase.due_time == datetime(2025, 4, 13, 12, 0)
+    ready_phase = table03.phases[-1]
+    spring_order_1901 = ready_phase.end()
+    assert spring_order_1901 is not None
+    assert spring_order_1901.type == "spring_order"
+    assert spring_order_1901.due_time == datetime(2025, 4, 13, 12, 0)
 
 
 async def test_table_regulation_flex_short_02_01(master_data: AsyncSession, table03: GameTable) -> None:
-    phase = table03.phases[-1]
-    new_phase = phase.end()
-    assert new_phase is not None
-    assert new_phase.due_time == datetime(2025, 4, 13, 12, 0)
+    ready_phase = table03.phases[-1]
+    spring_order_1901 = ready_phase.end()
+    assert spring_order_1901 is not None
+    assert spring_order_1901.due_time == datetime(2025, 4, 13, 12, 0)
     with ExitStack() as stack:
-        _ = stack.enter_context(patch.object(new_phase, "_should_skip_next_phase", return_value=False))
+        _ = stack.enter_context(patch.object(spring_order_1901, "_should_skip_next_phase", return_value=False))
         _ = stack.enter_context(patch("models.phase_model.get_current_time", return_value=datetime(2025, 4, 13, 12, 0)))
-        next_phase = new_phase.end()
+        next_phase = spring_order_1901.end()
         assert next_phase is not None
         assert next_phase.type == "spring_retreat"
         assert next_phase.due_time == datetime(2025, 4, 13, 12, 10)
 
 
 async def test_table_regulation_flex_short_02_02(master_data: AsyncSession, table03: GameTable) -> None:
-    phase = table03.phases[-1]
-    new_phase = phase.end()
-    assert new_phase is not None
-    assert new_phase.due_time == datetime(2025, 4, 13, 12, 0)
+    ready_phase = table03.phases[-1]
+    spring_order_1901 = ready_phase.end()
+    assert spring_order_1901 is not None
+    assert spring_order_1901.due_time == datetime(2025, 4, 13, 12, 0)
     with ExitStack() as stack:
-        _ = stack.enter_context(patch.object(new_phase, "_should_skip_next_phase", return_value=False))
+        _ = stack.enter_context(patch.object(spring_order_1901, "_should_skip_next_phase", return_value=False))
         _ = stack.enter_context(patch("models.phase_model.get_current_time", return_value=datetime(2025, 4, 13, 12, 3)))
-        next_phase = new_phase.end()
-        assert next_phase is not None
-        assert next_phase.type == "spring_retreat"
-        assert next_phase.due_time == datetime(2025, 4, 13, 12, 10)
+        spring_retreat_1901 = spring_order_1901.end()
+        assert spring_retreat_1901 is not None
+        assert spring_retreat_1901.type == "spring_retreat"
+        assert spring_retreat_1901.due_time == datetime(2025, 4, 13, 12, 10)
 
 
 async def test_table_regulation_flex_short_02_03(master_data: AsyncSession, table03: GameTable) -> None:
-    phase = table03.phases[-1]
-    new_phase = phase.end()
+    ready_phase = table03.phases[-1]
+    spring_order_1901 = ready_phase.end()
 
     # Phase#end() で生成されたインスタンスを commit() 前にセッションに追加する必要がある
     # GameTable のインスタンスを再度 add() することで関連付けられた新インスタンスも cascade により追加される
@@ -154,17 +173,79 @@ async def test_table_regulation_flex_short_02_03(master_data: AsyncSession, tabl
 
     # new_phase を疑似的にリロード
     # 元は TZ が消えることの確認の為だったが内部的に UTC かつ TZ なしで統一する方針を採用（2025/04/14）
-    await master_data.refresh(new_phase)
+    await master_data.refresh(spring_order_1901)
 
-    assert new_phase is not None
-    assert new_phase.due_time == datetime(2025, 4, 13, 12, 0)
+    assert spring_order_1901 is not None
+    assert spring_order_1901.due_time == datetime(2025, 4, 13, 12, 0)
     with ExitStack() as stack:
-        _ = stack.enter_context(patch.object(new_phase, "_should_skip_next_phase", return_value=False))
+        _ = stack.enter_context(patch.object(spring_order_1901, "_should_skip_next_phase", return_value=False))
         _ = stack.enter_context(patch("models.phase_model.get_current_time", return_value=datetime(2025, 4, 13, 11, 45)))
-        next_phase = new_phase.end()
+        spring_retreat_1901 = spring_order_1901.end()
         master_data.add(table03)
         await master_data.commit()
-        await master_data.refresh(new_phase)
-        assert next_phase is not None
-        assert next_phase.type == "spring_retreat"
-        assert next_phase.due_time == datetime(2025, 4, 13, 11, 55)
+        await master_data.refresh(spring_order_1901)
+        assert spring_retreat_1901 is not None
+        assert spring_retreat_1901.type == "spring_retreat"
+        assert spring_retreat_1901.due_time == datetime(2025, 4, 13, 11, 55)
+
+
+async def test_table_regulation_flex_short_03_01(master_data: AsyncSession, table03: GameTable) -> None:
+    ready_phase = table03.phases[-1]
+    spring_order_1901 = ready_phase.end()
+    assert spring_order_1901 is not None
+    assert spring_order_1901.due_time == datetime(2025, 4, 13, 12, 0)
+    with ExitStack() as stack:
+        _ = stack.enter_context(patch.object(spring_order_1901, "_should_skip_next_phase", return_value=False))
+        _ = stack.enter_context(patch("models.phase_model.get_current_time", return_value=datetime(2025, 4, 13, 12, 0)))
+        spring_retreat_1901 = spring_order_1901.end()
+        assert spring_retreat_1901 is not None
+        assert spring_retreat_1901.due_time == datetime(2025, 4, 13, 12, 10)
+
+        _ = stack.enter_context(patch.object(spring_retreat_1901, "_should_skip_next_phase", return_value=False))
+        _ = stack.enter_context(patch("models.phase_model.get_current_time", return_value=datetime(2025, 4, 13, 12, 10)))
+        fall_order_1901 = spring_retreat_1901.end()
+        assert fall_order_1901 is not None
+        assert fall_order_1901.type == "fall_order"
+        assert fall_order_1901.due_time == datetime(2025, 4, 13, 13, 10)
+
+
+async def test_table_regulation_flex_short_03_02(master_data: AsyncSession, table03: GameTable) -> None:
+    ready_phase = table03.phases[-1]
+    spring_order_1901 = ready_phase.end()
+    assert spring_order_1901 is not None
+    assert spring_order_1901.due_time == datetime(2025, 4, 13, 12, 0)
+    with ExitStack() as stack:
+        _ = stack.enter_context(patch.object(spring_order_1901, "_should_skip_next_phase", return_value=False))
+        _ = stack.enter_context(patch("models.phase_model.get_current_time", return_value=datetime(2025, 4, 13, 12, 3)))
+        spring_retreat_1901 = spring_order_1901.end()
+        assert spring_retreat_1901 is not None
+        assert spring_retreat_1901.type == "spring_retreat"
+        assert spring_retreat_1901.due_time == datetime(2025, 4, 13, 12, 10)
+
+        _ = stack.enter_context(patch.object(spring_retreat_1901, "_should_skip_next_phase", return_value=False))
+        _ = stack.enter_context(patch("models.phase_model.get_current_time", return_value=datetime(2025, 4, 13, 12, 13)))
+        fall_order_1901 = spring_retreat_1901.end()
+        assert fall_order_1901 is not None
+        assert fall_order_1901.type == "fall_order"
+        assert fall_order_1901.due_time == datetime(2025, 4, 13, 13, 10)
+
+
+async def test_table_regulation_flex_short_03_03(master_data: AsyncSession, table03: GameTable) -> None:
+    ready_phase = table03.phases[-1]
+    spring_order_1901 = ready_phase.end()
+    assert spring_order_1901 is not None
+    assert spring_order_1901.due_time == datetime(2025, 4, 13, 12, 0)
+    with ExitStack() as stack:
+        _ = stack.enter_context(patch.object(spring_order_1901, "_should_skip_next_phase", return_value=False))
+        _ = stack.enter_context(patch("models.phase_model.get_current_time", return_value=datetime(2025, 4, 13, 11, 45)))
+        spring_retreat_1901 = spring_order_1901.end()
+        assert spring_retreat_1901 is not None
+        assert spring_retreat_1901.type == "spring_retreat"
+        assert spring_retreat_1901.due_time == datetime(2025, 4, 13, 11, 55)
+
+        _ = stack.enter_context(patch.object(spring_retreat_1901, "_should_skip_next_phase", return_value=False))
+        _ = stack.enter_context(patch("models.phase_model.get_current_time", return_value=datetime(2025, 4, 13, 11, 50)))
+        fall_order_1901 = spring_retreat_1901.end()
+        assert fall_order_1901 is not None
+        assert fall_order_1901.type == "fall_order"
+        assert fall_order_1901.due_time == datetime(2025, 4, 13, 12, 50)
