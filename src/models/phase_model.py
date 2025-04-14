@@ -288,7 +288,14 @@ class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
 
     @override
     def _get_next_due_time(self) -> datetime | None:
-        return None  # TODO: _get_next_due_time （調整フェイズ期限時刻算出）
+        if self.due_time is None:
+            return None
+
+        now = get_current_time()
+        if self.table.due_mode == DueMode.FIXED or now >= self.due_time:
+            return self.due_time + timedelta(minutes=self.table.get_adjustment_phase_duration())
+        else:
+            return now + timedelta(minutes=self.table.get_adjustment_phase_duration())
 
     @override
     def _occupy(self) -> None:

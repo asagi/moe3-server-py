@@ -60,3 +60,8 @@ class GameTable(Base):
         if not self.regulation:
             return 0
         return self.regulation.duration.retreat_phase
+
+    def get_adjustment_phase_duration(self) -> int:
+        if not self.regulation:
+            return 0
+        return self.regulation.duration.adjustment_phase
