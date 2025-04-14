@@ -16,6 +16,7 @@ from models.phase_mixins import (
 from models.power_model import Power
 from models.province_model import Province
 from models.standoff_model import Standoff
+from value_objects.duration_values import DueMode
 
 if TYPE_CHECKING:
     from models.order_model import Order
@@ -178,7 +179,17 @@ class OrderPhase(Phase, OrderPhaseMixin):
 
     @override
     def _get_next_due_time(self) -> datetime | None:
-        return None  # TODO: _get_next_due_time （撤退フェイズ期限時刻算出）
+        if self.due_time is None:
+            return None
+
+        now = datetime.now()
+        match self.table.due_mode:
+            case DueMode.FIXED:
+                return self.due_time + timedelta(minutes=self.table.get_retreat_phase_duration())
+            case DueMode.FLEXIBLE:
+                return now + timedelta(minutes=self.table.get_retreat_phase_duration())
+            case _:
+                return None
 
     @override
     def _resolve_orders(self) -> None:
