@@ -1,4 +1,5 @@
 import enum
+from datetime import datetime
 from typing import TYPE_CHECKING, Self, override
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
@@ -35,7 +36,7 @@ class Phase(Base):
     prev_phase_id: Mapped[Self | None] = mapped_column(Integer, ForeignKey("phases.id"))
     status: Mapped[Status] = mapped_column(Enum(Status), nullable=False, default=Status.OPEN)
     year: Mapped[int] = mapped_column(Integer, default=0)
-    due_time: Mapped[DateTime | None] = mapped_column(DateTime)
+    due_time: Mapped[datetime | None] = mapped_column(DateTime)
 
     table: Mapped[GameTable] = relationship("GameTable", foreign_keys=[table_id], back_populates="phases", uselist=False)
     prev_phase: Mapped[Self | None] = relationship("Phase", remote_side=[id], foreign_keys=[prev_phase_id])
@@ -99,7 +100,7 @@ class Phase(Base):
     def _get_next_phase(self) -> Self:
         raise NotImplementedError("This method should be overridden")
 
-    def _get_next_due_time(self) -> DateTime | None:
+    def _get_next_due_time(self) -> datetime | None:
         raise NotImplementedError("This method should be overridden")
 
     def _resolve_orders(self) -> None:
@@ -135,6 +136,7 @@ class Phase(Base):
         new_phase = self._create_next_phase()
 
         if not self._should_skip_next_phase(active_powers):
+            # TODO: アクティブ国の早回しおよび和平同意フラグオフ
             return new_phase._open()
 
         return new_phase.end(active_powers)
@@ -154,7 +156,7 @@ class ReadyPhase(Phase, BeforeOrderPhaseMixin):
         return SpringOrderPhase(prev_phase=self)
 
     @override
-    def _get_next_due_time(self) -> DateTime | None:
+    def _get_next_due_time(self) -> datetime | None:
         return None  # TODO: _get_next_due_time （開始時刻取得）
 
     @override
@@ -174,7 +176,7 @@ class OrderPhase(Phase, OrderPhaseMixin):
         return self.initialize_next_disband_orders(self.latest_units)
 
     @override
-    def _get_next_due_time(self) -> DateTime | None:
+    def _get_next_due_time(self) -> datetime | None:
         return None  # TODO: _get_next_due_time （撤退フェイズ期限時刻算出）
 
     @override
@@ -232,7 +234,7 @@ class SpringRetreatPhase(RetreatPhase, BeforeOrderPhaseMixin):
         return FallOrderPhase(prev_phase=self)
 
     @override
-    def _get_next_due_time(self) -> DateTime | None:
+    def _get_next_due_time(self) -> datetime | None:
         return None  # TODO: _get_next_due_time （秋命令フェイズ期限時刻算出）
 
 
@@ -260,7 +262,7 @@ class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
         return AdjusntmentPhase(prev_phase=self)
 
     @override
-    def _get_next_due_time(self) -> DateTime | None:
+    def _get_next_due_time(self) -> datetime | None:
         return None  # TODO: _get_next_due_time （調整フェイズ期限時刻算出）
 
     @override
@@ -296,7 +298,7 @@ class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
         return SpringOrderPhase(prev_phase=self)
 
     @override
-    def _get_next_due_time(self) -> DateTime | None:
+    def _get_next_due_time(self) -> datetime | None:
         return None  # TODO: _get_next_due_time （春命令フェイズ期限時刻算出）
 
     @override
