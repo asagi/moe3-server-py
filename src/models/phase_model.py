@@ -3,9 +3,10 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Self, override
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, object_session, relationship
 
 from app.constants import INITIAL_YEAR
+from app.util import get_current_time
 from models.base_model import Base
 from models.game_table_model import GameTable
 from models.phase_mixins import (
@@ -42,9 +43,9 @@ class Phase(Base):
     table: Mapped[GameTable] = relationship("GameTable", foreign_keys=[table_id], back_populates="phases", uselist=False)
     prev_phase: Mapped[Self | None] = relationship("Phase", remote_side=[id], foreign_keys=[prev_phase_id])
     territories: Mapped[list["Territory"]] = relationship("Territory", back_populates="phase", lazy="selectin")
-    units: Mapped[list["Unit"]] = relationship("Unit")
-    orders: Mapped[list["Order"]] = relationship("Order")
-    standoffs: Mapped[list[Standoff]] = relationship("Standoff")
+    units: Mapped[list["Unit"]] = relationship("Unit", lazy="selectin")
+    orders: Mapped[list["Order"]] = relationship("Order", lazy="selectin")
+    standoffs: Mapped[list[Standoff]] = relationship("Standoff", lazy="selectin")
 
     __mapper_args__ = {
         "polymorphic_identity": "phase",
@@ -182,14 +183,11 @@ class OrderPhase(Phase, OrderPhaseMixin):
         if self.due_time is None:
             return None
 
-        now = datetime.now()
-        match self.table.due_mode:
-            case DueMode.FIXED:
-                return self.due_time + timedelta(minutes=self.table.get_retreat_phase_duration())
-            case DueMode.FLEXIBLE:
-                return now + timedelta(minutes=self.table.get_retreat_phase_duration())
-            case _:
-                return None
+        now = get_current_time()
+        if self.table.due_mode == DueMode.FIXED or now >= self.due_time:
+            return self.due_time + timedelta(minutes=self.table.get_retreat_phase_duration())
+        else:
+            return now + timedelta(minutes=self.table.get_retreat_phase_duration())
 
     @override
     def _resolve_orders(self) -> None:

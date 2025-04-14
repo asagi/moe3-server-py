@@ -1,6 +1,9 @@
+from contextlib import ExitStack
 from datetime import datetime
+from unittest.mock import patch
 
 import pytest
+from dateutil import parser
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,7 +26,7 @@ async def table01(master_data: AsyncSession) -> GameTable:
 async def table02(master_data: AsyncSession) -> GameTable:
     face_type = Regulation.FaceType.GIRLS
     duration_type = Regulation.DurationType.FIXED_MIDDLE
-    satrt_time = datetime.strptime("2025-04-13T11:00:00.000Z", "%Y-%m-%dT%H:%M:%S.%fZ")
+    satrt_time = parser.isoparse("2025-04-13T11:00:00.000Z").replace(tzinfo=None)
     regulation = Regulation(face_type, duration_type, satrt_time)
     new_table = await GameTable.create_with_phases(None, regulation)
     master_data.add(new_table)
@@ -36,7 +39,7 @@ async def table03(master_data: AsyncSession) -> GameTable:
     new_user = User(gid="123", gname="test", picture="picture")
     face_type = Regulation.FaceType.FLAGS
     duration_type = Regulation.DurationType.FLEX_SHORT
-    satrt_time = datetime.strptime("2025-04-13T11:00:00.000Z", "%Y-%m-%dT%H:%M:%S.%fZ")
+    satrt_time = parser.isoparse("2025-04-13T11:00:00.000Z").replace(tzinfo=None)
     regulation = Regulation(face_type, duration_type, satrt_time)
     new_table = await GameTable.create_with_phases(new_user, regulation)
     master_data.add(new_table)
@@ -92,9 +95,76 @@ async def test_table_regulation_fixed_middle_01(master_data: AsyncSession, table
     assert new_phase.due_time == datetime(2025, 4, 14, 11, 0)
 
 
+async def test_table_regulation_fixed_middle_02(master_data: AsyncSession, table02: GameTable) -> None:
+    phase = table02.phases[-1]
+    new_phase = phase.end()
+    assert new_phase is not None
+    with ExitStack() as stack:
+        _ = stack.enter_context(patch.object(new_phase, "_should_skip_next_phase", return_value=False))
+        next_phase = new_phase.end()
+        assert next_phase is not None
+        assert next_phase.type == "spring_retreat"
+        assert next_phase.due_time == datetime(2025, 4, 14, 12, 0)
+
+
 async def test_table_regulation_flex_short_01(master_data: AsyncSession, table03: GameTable) -> None:
     phase = table03.phases[-1]
     new_phase = phase.end()
     assert new_phase is not None
     assert new_phase.type == "spring_order"
     assert new_phase.due_time == datetime(2025, 4, 13, 12, 0)
+
+
+async def test_table_regulation_flex_short_02_01(master_data: AsyncSession, table03: GameTable) -> None:
+    phase = table03.phases[-1]
+    new_phase = phase.end()
+    assert new_phase is not None
+    assert new_phase.due_time == datetime(2025, 4, 13, 12, 0)
+    with ExitStack() as stack:
+        _ = stack.enter_context(patch.object(new_phase, "_should_skip_next_phase", return_value=False))
+        _ = stack.enter_context(patch("models.phase_model.get_current_time", return_value=datetime(2025, 4, 13, 12, 0)))
+        next_phase = new_phase.end()
+        assert next_phase is not None
+        assert next_phase.type == "spring_retreat"
+        assert next_phase.due_time == datetime(2025, 4, 13, 12, 10)
+
+
+async def test_table_regulation_flex_short_02_02(master_data: AsyncSession, table03: GameTable) -> None:
+    phase = table03.phases[-1]
+    new_phase = phase.end()
+    assert new_phase is not None
+    assert new_phase.due_time == datetime(2025, 4, 13, 12, 0)
+    with ExitStack() as stack:
+        _ = stack.enter_context(patch.object(new_phase, "_should_skip_next_phase", return_value=False))
+        _ = stack.enter_context(patch("models.phase_model.get_current_time", return_value=datetime(2025, 4, 13, 12, 3)))
+        next_phase = new_phase.end()
+        assert next_phase is not None
+        assert next_phase.type == "spring_retreat"
+        assert next_phase.due_time == datetime(2025, 4, 13, 12, 10)
+
+
+async def test_table_regulation_flex_short_02_03(master_data: AsyncSession, table03: GameTable) -> None:
+    phase = table03.phases[-1]
+    new_phase = phase.end()
+
+    # Phase#end() で生成されたインスタンスを commit() 前にセッションに追加する必要がある
+    # GameTable のインスタンスを再度 add() することで関連付けられた新インスタンスも cascade により追加される
+    master_data.add(table03)
+    await master_data.commit()
+
+    # new_phase を疑似的にリロード
+    # 元は TZ が消えることの確認の為だったが内部的に UTC かつ TZ なしで統一する方針を採用（2025/04/14）
+    await master_data.refresh(new_phase)
+
+    assert new_phase is not None
+    assert new_phase.due_time == datetime(2025, 4, 13, 12, 0)
+    with ExitStack() as stack:
+        _ = stack.enter_context(patch.object(new_phase, "_should_skip_next_phase", return_value=False))
+        _ = stack.enter_context(patch("models.phase_model.get_current_time", return_value=datetime(2025, 4, 13, 11, 45)))
+        next_phase = new_phase.end()
+        master_data.add(table03)
+        await master_data.commit()
+        await master_data.refresh(new_phase)
+        assert next_phase is not None
+        assert next_phase.type == "spring_retreat"
+        assert next_phase.due_time == datetime(2025, 4, 13, 11, 55)
