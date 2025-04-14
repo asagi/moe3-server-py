@@ -138,6 +138,7 @@ class Phase(Base):
         new_phase = self._create_next_phase()
 
         if not self._should_skip_next_phase(active_powers):
+            # TODO: アクティブ国の早回しおよび和平同意フラグオフ
             return new_phase._open()
 
         return new_phase.end(active_powers)
