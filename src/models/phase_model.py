@@ -249,7 +249,7 @@ class SpringRetreatPhase(RetreatPhase, BeforeOrderPhaseMixin):
             return None
 
         now = get_current_time()
-        if self.table.due_mode == DueMode.FIXED and now >= self.due_time:
+        if self.table.due_mode == DueMode.FIXED:
             # fmt: off
             return (
                 self.due_time
@@ -331,7 +331,23 @@ class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
 
     @override
     def _get_next_due_time(self) -> datetime | None:
-        return None  # TODO: _get_next_due_time （春命令フェイズ期限時刻算出）
+        if self.due_time is None:
+            return None
+
+        now = get_current_time()
+        if self.table.due_mode == DueMode.FIXED:
+            # fmt: off
+            return (
+                self.due_time
+                + timedelta(minutes=self.table.get_order_phase_duration())
+                - timedelta(minutes=self.table.get_retreat_phase_duration())
+                - timedelta(minutes=self.table.get_adjustment_phase_duration())
+            )
+            # fmt: on
+        elif self.table.due_mode == DueMode.FLEXIBLE and now >= self.due_time:
+            return self.due_time + timedelta(minutes=self.table.get_order_phase_duration())
+        else:
+            return now + timedelta(minutes=self.table.get_order_phase_duration())
 
     @override
     def _resolve_orders(self) -> None:
