@@ -1,10 +1,12 @@
 import enum
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Self, override
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.constants import INITIAL_YEAR
+from app.util import get_current_time
 from models.base_model import Base
 from models.game_table_model import GameTable
 from models.phase_mixins import (
@@ -15,6 +17,7 @@ from models.phase_mixins import (
 from models.power_model import Power
 from models.province_model import Province
 from models.standoff_model import Standoff
+from value_objects.duration_values import DueMode
 
 if TYPE_CHECKING:
     from models.order_model import Order
@@ -35,14 +38,14 @@ class Phase(Base):
     prev_phase_id: Mapped[Self | None] = mapped_column(Integer, ForeignKey("phases.id"))
     status: Mapped[Status] = mapped_column(Enum(Status), nullable=False, default=Status.OPEN)
     year: Mapped[int] = mapped_column(Integer, default=0)
-    due_time: Mapped[DateTime | None] = mapped_column(DateTime)
+    due_time: Mapped[datetime | None] = mapped_column(DateTime)
 
     table: Mapped[GameTable] = relationship("GameTable", foreign_keys=[table_id], back_populates="phases", uselist=False)
     prev_phase: Mapped[Self | None] = relationship("Phase", remote_side=[id], foreign_keys=[prev_phase_id])
     territories: Mapped[list["Territory"]] = relationship("Territory", back_populates="phase", lazy="selectin")
-    units: Mapped[list["Unit"]] = relationship("Unit")
-    orders: Mapped[list["Order"]] = relationship("Order")
-    standoffs: Mapped[list[Standoff]] = relationship("Standoff")
+    units: Mapped[list["Unit"]] = relationship("Unit", lazy="selectin")
+    orders: Mapped[list["Order"]] = relationship("Order", lazy="selectin")
+    standoffs: Mapped[list[Standoff]] = relationship("Standoff", lazy="selectin")
 
     __mapper_args__ = {
         "polymorphic_identity": "phase",
@@ -99,11 +102,11 @@ class Phase(Base):
     def _get_next_phase(self) -> Self:
         raise NotImplementedError("This method should be overridden")
 
-    def _get_next_due_time(self) -> DateTime | None:
+    def _get_next_due_time(self) -> datetime | None:
         raise NotImplementedError("This method should be overridden")
 
     def _resolve_orders(self) -> None:
-        raise NotImplementedError("This method should be overridden")
+        pass
 
     def _occupy(self) -> None:
         pass
@@ -154,8 +157,10 @@ class ReadyPhase(Phase, BeforeOrderPhaseMixin):
         return SpringOrderPhase(prev_phase=self)
 
     @override
-    def _get_next_due_time(self) -> DateTime | None:
-        return None  # TODO: _get_next_due_time （開始時刻取得）
+    def _get_next_due_time(self) -> datetime | None:
+        if self.table.start_time is None:
+            return None
+        return self.table.start_time + timedelta(minutes=self.table.get_order_phase_duration())
 
     @override
     def _create_next_phase(self) -> Phase:
@@ -174,8 +179,15 @@ class OrderPhase(Phase, OrderPhaseMixin):
         return self.initialize_next_disband_orders(self.latest_units)
 
     @override
-    def _get_next_due_time(self) -> DateTime | None:
-        return None  # TODO: _get_next_due_time （撤退フェイズ期限時刻算出）
+    def _get_next_due_time(self) -> datetime | None:
+        if self.due_time is None:
+            return None
+
+        now = get_current_time()
+        if self.table.due_mode == DueMode.FIXED or now >= self.due_time:
+            return self.due_time + timedelta(minutes=self.table.get_retreat_phase_duration())
+        else:
+            return now + timedelta(minutes=self.table.get_retreat_phase_duration())
 
     @override
     def _resolve_orders(self) -> None:
@@ -232,8 +244,23 @@ class SpringRetreatPhase(RetreatPhase, BeforeOrderPhaseMixin):
         return FallOrderPhase(prev_phase=self)
 
     @override
-    def _get_next_due_time(self) -> DateTime | None:
-        return None  # TODO: _get_next_due_time （秋命令フェイズ期限時刻算出）
+    def _get_next_due_time(self) -> datetime | None:
+        if self.due_time is None:
+            return None
+
+        now = get_current_time()
+        if self.table.due_mode == DueMode.FIXED:
+            # fmt: off
+            return (
+                self.due_time
+                + timedelta(minutes=self.table.get_order_phase_duration())
+                - timedelta(minutes=self.table.get_retreat_phase_duration())
+            )
+            # fmt: on
+        elif self.table.due_mode == DueMode.FLEXIBLE and now >= self.due_time:
+            return self.due_time + timedelta(minutes=self.table.get_order_phase_duration())
+        else:
+            return now + timedelta(minutes=self.table.get_order_phase_duration())
 
 
 class FallOrderPhase(OrderPhase):
@@ -260,8 +287,15 @@ class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
         return AdjusntmentPhase(prev_phase=self)
 
     @override
-    def _get_next_due_time(self) -> DateTime | None:
-        return None  # TODO: _get_next_due_time （調整フェイズ期限時刻算出）
+    def _get_next_due_time(self) -> datetime | None:
+        if self.due_time is None:
+            return None
+
+        now = get_current_time()
+        if self.table.due_mode == DueMode.FIXED or now >= self.due_time:
+            return self.due_time + timedelta(minutes=self.table.get_adjustment_phase_duration())
+        else:
+            return now + timedelta(minutes=self.table.get_adjustment_phase_duration())
 
     @override
     def _occupy(self) -> None:
@@ -296,8 +330,24 @@ class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
         return SpringOrderPhase(prev_phase=self)
 
     @override
-    def _get_next_due_time(self) -> DateTime | None:
-        return None  # TODO: _get_next_due_time （春命令フェイズ期限時刻算出）
+    def _get_next_due_time(self) -> datetime | None:
+        if self.due_time is None:
+            return None
+
+        now = get_current_time()
+        if self.table.due_mode == DueMode.FIXED:
+            # fmt: off
+            return (
+                self.due_time
+                + timedelta(minutes=self.table.get_order_phase_duration())
+                - timedelta(minutes=self.table.get_retreat_phase_duration())
+                - timedelta(minutes=self.table.get_adjustment_phase_duration())
+            )
+            # fmt: on
+        elif self.table.due_mode == DueMode.FLEXIBLE and now >= self.due_time:
+            return self.due_time + timedelta(minutes=self.table.get_order_phase_duration())
+        else:
+            return now + timedelta(minutes=self.table.get_order_phase_duration())
 
     @override
     def _resolve_orders(self) -> None:
