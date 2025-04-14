@@ -1,8 +1,9 @@
 import enum
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Enum, Integer
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base_model import Base
 from value_objects.duration_values import (
@@ -10,6 +11,9 @@ from value_objects.duration_values import (
     fixed_middle_duration,
     flex_short_duration,
 )
+
+if TYPE_CHECKING:
+    from models.game_table_model import GameTable
 
 
 class Regulation(Base):
@@ -28,6 +32,8 @@ class Regulation(Base):
     duration_type: Mapped[DurationType] = mapped_column(Enum(DurationType), nullable=False)
     start_time: Mapped[datetime] = mapped_column(nullable=False)
 
+    table: Mapped["GameTable"] = relationship("GameTable", back_populates="regulation", uselist=False)
+
     def __init__(self, face_type: FaceType, duration_type: DurationType, start_time: datetime) -> None:
         if face_type not in self.FaceType:
             raise ValueError(f"Invalid face type: {face_type}")
@@ -41,6 +47,18 @@ class Regulation(Base):
 
         match self.duration_type:
             case Regulation.DurationType.FIXED_MIDDLE:
-                self._duration: Duration = fixed_middle_duration
+                self.duration: Duration = fixed_middle_duration
             case Regulation.DurationType.FLEX_SHORT:
-                self._duration: Duration = flex_short_duration
+                self.duration: Duration = flex_short_duration
+
+    def get_order_phase_duration(self) -> int:
+        return self._duration.order_phase
+
+    def get_retreat_phase_duration(self) -> int:
+        return self._duration.retreat_phase
+
+    def get_adjustment_phase_duration(self) -> int:
+        return self._duration.adjustment_phase
+
+    def get_debrief_phase_duration(self) -> int:
+        return self._duration.debrief_phase
