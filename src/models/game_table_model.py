@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Self
 from sqlalchemy import ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.util import get_current_time
 from models.base_model import Base
 from models.power_model import Power
 from models.regularion_model import Regulation
@@ -75,7 +76,7 @@ class GameTable(Base):
         if not current_phase.due_time:
             return False
 
-        now = datetime.now()
+        now = get_current_time()
         # TODO: 早回し条件が成立していた場合
         #   current_phase.due_time = now を設定（ReadyPhase, DebriefPhase 除く）
 
