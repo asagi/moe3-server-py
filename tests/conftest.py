@@ -69,7 +69,7 @@ def patched_user_service_factory(mock_user: dict[str, Any]) -> Generator[Any, No
         mock_service.userinfo.return_value.get.return_value.execute.return_value = mock_user
         _ = stack.enter_context(patch("services.user_service.build", return_value=mock_service))
         _ = stack.enter_context(patch("services.user_service._generate_access_key", return_value="accesskey"))
-        _ = stack.enter_context(patch("services.user_service._get_current_time", return_value=dt_utc))
+        _ = stack.enter_context(patch("services.user_service.get_current_time", return_value=dt_utc))
         return stack
 
     yield _factory
