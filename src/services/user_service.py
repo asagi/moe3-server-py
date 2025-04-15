@@ -24,14 +24,14 @@ async def login_user(db: AsyncSession, param: UserLogin) -> User:
     gname: str = cast(str, response["name"])
     picture: str = cast(str, response["picture"])
 
-    user = (await db.execute(select(User).filter_by(gid=gid))).scalar_one_or_none()
-    if user:
-        user.picture = picture
-        user.gname = gname
-        user.access_key = _generate_access_key()
-        user.last_access_time = get_current_time()
+    exist_user = (await db.execute(select(User).filter_by(gid=gid))).scalar_one_or_none()
+    if exist_user:
+        exist_user.picture = picture
+        exist_user.gname = gname
+        exist_user.access_key = _generate_access_key()
+        exist_user.last_access_time = get_current_time()
         await db.commit()
-        return user
+        return exist_user
 
     new_user = User(gid=gid, gname=gname, picture=picture)
     new_user.access_key = _generate_access_key()
