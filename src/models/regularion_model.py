@@ -50,15 +50,3 @@ class Regulation(Base):
                 self.duration: Duration = fixed_middle_duration
             case Regulation.DurationType.FLEX_SHORT:
                 self.duration: Duration = flex_short_duration
-
-    def get_order_phase_duration(self) -> int:
-        return self._duration.order_phase
-
-    def get_retreat_phase_duration(self) -> int:
-        return self._duration.retreat_phase
-
-    def get_adjustment_phase_duration(self) -> int:
-        return self._duration.adjustment_phase
-
-    def get_debrief_phase_duration(self) -> int:
-        return self._duration.debrief_phase
