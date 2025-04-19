@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Self, override
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.constants import INITIAL_YEAR
+from app.constants import INITIAL_YEAR, SUPPLY_CENTER_THRESHOLD
 from app.util import get_current_time
 from models.base_model import Base
 from models.game_table_model import GameTable
@@ -140,26 +140,68 @@ class Phase(Base):
         draw_agreed_players = [p for p in self.table.players if p.power in powers and p.is_draw_agreed]
         return len(draw_agreed_players) / len(powers) > 0.5
 
+    def _count_supply_centers(self, power: Power) -> int:
+        return sum(1 for t in self.latest_territories if t.occupier == power and t.suppliable)
+
+    def _check_resolved_condition(self) -> bool:
+        if not self.table:
+            return False
+
+        if not isinstance(self, FallRetreatPhase):
+            return False
+
+        return any(self._count_supply_centers(power) >= SUPPLY_CENTER_THRESHOLD for power in Power.all())
+
+    def _end_in_draw(self) -> Self | None:
+        # TODO: self.table のステータスを DRAW に変更
+        ...
+
+        if not self.due_time:
+            return self._create_debrief_phase()._open()
+
+        now = get_current_time()
+        if self.table.due_mode == DueMode.FIXED or now >= self.due_time:
+            due_time = self.due_time + timedelta(minutes=self.table.get_debrief_phase_duration())
+        else:
+            due_time = now + timedelta(minutes=self.table.get_debrief_phase_duration())
+        return self._create_debrief_phase(due_time)._open()
+
+    def _end_due_to_resolution(self) -> Self | None:
+        # TODO: self.table のステータスを RESOLVED に変更
+        ...
+
+        if not self.due_time:
+            return self._create_debrief_phase()._open()
+
+        now = get_current_time()
+        if self.table.due_mode == DueMode.FIXED:
+            # fmt: off
+            due_time =  (
+                self.due_time
+                + timedelta(minutes=self.table.get_order_phase_duration())
+                - timedelta(minutes=self.table.get_retreat_phase_duration())
+            )
+            # fmt: on
+        elif self.table.due_mode == DueMode.FLEXIBLE and now >= self.due_time:
+            due_time = self.due_time + timedelta(minutes=self.table.get_order_phase_duration())
+        else:
+            due_time = now + timedelta(minutes=self.table.get_order_phase_duration())
+        return self._create_debrief_phase(due_time)._open()
+
     def end(self, active_powers: set[Power] | None = None) -> Self | None:
         if active_powers is None:
             active_powers = set()
 
         if self._check_draw_condition(active_powers):
-            if not self.due_time:
-                return self._create_debrief_phase()._open()
-
-            now = get_current_time()
-            if self.table.due_mode == DueMode.FIXED or now >= self.due_time:
-                due_time = self.due_time + timedelta(minutes=self.table.get_debrief_phase_duration())
-            else:
-                due_time = now + timedelta(minutes=self.table.get_debrief_phase_duration())
-            return self._create_debrief_phase(due_time)._open()
+            # 和平終了
+            return self._end_in_draw()
 
         self._resolve_orders()
         self._occupy()
 
-        # TODO: 制覇判定
-        # 誰かが制覇勝利したら感想戦フェイズを生成して返却
+        if self._check_resolved_condition():
+            # 制覇終了
+            return self._end_due_to_resolution()
 
         new_phase = self._create_next_phase()
 
