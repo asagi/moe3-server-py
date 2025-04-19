@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, Integer
+from sqlalchemy import Boolean, ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base_model import Base
@@ -14,6 +14,8 @@ class Player(Base):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"))
     table_id: Mapped[int] = mapped_column(Integer, ForeignKey("game_tables.id"))
     power_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("powers.id"))
+    is_progress_agreed: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_draw_agreed: Mapped[bool] = mapped_column(Boolean, default=False)
 
     user: Mapped[User] = relationship("User", foreign_keys=[user_id], back_populates="players", uselist=False)
     table: Mapped[GameTable] = relationship("GameTable", foreign_keys=[table_id], back_populates="players", uselist=False)
