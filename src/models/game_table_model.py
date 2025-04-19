@@ -24,7 +24,7 @@ class GameTable(Base):
     regulation_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("regulations.id"), nullable=True)
 
     owner: Mapped[User | None] = relationship("User", foreign_keys=[user_id], back_populates="tables")
-    players: Mapped[list["Player"]] = relationship("Player", back_populates="table")
+    players: Mapped[list["Player"]] = relationship("Player", back_populates="table", lazy="selectin")
     phases: Mapped[list["Phase"]] = relationship("Phase", back_populates="table")
     regulation: Mapped[Regulation | None] = relationship("Regulation", back_populates="table", uselist=False)
 
@@ -39,6 +39,7 @@ class GameTable(Base):
 
     def __init__(self, owner: User | None = None, regulation: Regulation | None = None) -> None:
         self.owner = owner
+        self.players = []
         self.regulation = regulation
 
     @property
@@ -67,6 +68,11 @@ class GameTable(Base):
         if not self.regulation:
             return 0
         return self.regulation.duration.adjustment_phase
+
+    def get_debrief_phase_duration(self) -> int:
+        if not self.regulation:
+            return 0
+        return self.regulation.duration.debrief_phase
 
     def proceed(self, active_powers: set[Power] | None = None) -> bool:
         if not self.phases:
