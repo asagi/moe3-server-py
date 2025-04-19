@@ -203,6 +203,8 @@ class OrderPhase(Phase, OrderPhaseMixin):
 
     @override
     def _should_skip_next_phase(self, active_powers: set[Power]) -> bool:
+        if self.table and self.table.due_mode == DueMode.FIXED:
+            return False
         return self.should_skip_next_retreat_phase(active_powers, self.units, self.standoffs)
 
 
@@ -314,6 +316,8 @@ class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
 
     @override
     def _should_skip_next_phase(self, active_powers: set[Power]) -> bool:
+        if self.table and self.table.due_mode == DueMode.FIXED:
+            return False
         return self.should_skip_next_adjustment_phase(active_powers, self.latest_units, self.latest_territories)
 
 
