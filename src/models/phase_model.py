@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Self, override
 from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.constants import INITIAL_YEAR
+from app.constants import INITIAL_YEAR, SUPPLY_CENTER_THRESHOLD
 from app.util import get_current_time
 from models.base_model import Base
 from models.game_table_model import GameTable
@@ -140,10 +140,19 @@ class Phase(Base):
         draw_agreed_players = [p for p in self.table.players if p.power in powers and p.is_draw_agreed]
         return len(draw_agreed_players) / len(powers) > 0.5
 
-    def _check_resolved_condition(self, active_powers: set[Power]) -> bool:
-        return False
+    def _count_supply_centers(self, power: Power) -> int:
+        return sum(1 for t in self.latest_territories if t.occupier == power and t.suppliable)
 
-    def _end_in_draw(self, active_powers: set[Power] | None = None) -> Self | None:
+    def _check_resolved_condition(self) -> bool:
+        if not self.table:
+            return False
+
+        if not isinstance(self, FallRetreatPhase):
+            return False
+
+        return any(self._count_supply_centers(power) >= SUPPLY_CENTER_THRESHOLD for power in Power.all())
+
+    def _end_in_draw(self) -> Self | None:
         # TODO: self.table のステータスを DRAW に変更
         ...
 
@@ -157,7 +166,7 @@ class Phase(Base):
             due_time = now + timedelta(minutes=self.table.get_debrief_phase_duration())
         return self._create_debrief_phase(due_time)._open()
 
-    def _end_due_to_resolution(self, active_powers: set[Power] | None = None) -> Self | None:
+    def _end_due_to_resolution(self) -> Self | None:
         # TODO: self.table のステータスを RESOLVED に変更
         ...
 
@@ -184,13 +193,15 @@ class Phase(Base):
             active_powers = set()
 
         if self._check_draw_condition(active_powers):
-            return self._end_in_draw(active_powers)
+            # 和平終了
+            return self._end_in_draw()
 
         self._resolve_orders()
         self._occupy()
 
-        if self._check_resolved_condition(active_powers):
-            return self._end_due_to_resolution(active_powers)
+        if self._check_resolved_condition():
+            # 制覇終了
+            return self._end_due_to_resolution()
 
         new_phase = self._create_next_phase()
 
