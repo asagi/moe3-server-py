@@ -119,15 +119,41 @@ class Phase(Base):
         new_phase.orders.extend(self._initialize_next_orders())
         return new_phase
 
+    def _create_debrief_phase(self, due_time: datetime | None = None) -> Self:
+        _ = self._close()
+        debrief_phase = DebriefPhase(self)
+        if due_time is not None:
+            debrief_phase.due_time = due_time
+        return debrief_phase._open()
+
     def _should_skip_next_phase(self, _active_powers: set[Power]) -> bool:
         return False
+
+    def _check_draw_condition(self, active_powers: set[Power]) -> bool:
+        if not self.table:
+            return False
+
+        if not isinstance(self, OrderPhase):
+            return False
+
+        powers = active_powers if active_powers else Power.all()
+        draw_agreed_players = [p for p in self.table.players if p.power in powers and p.is_draw_agreed]
+        return len(draw_agreed_players) / len(powers) > 0.5
 
     def end(self, active_powers: set[Power] | None = None) -> Self | None:
         if active_powers is None:
             active_powers = set()
 
-        # TODO: 和平判定
-        # 和平条件成立なら感想戦フェイズを生成して返却
+        if self._check_draw_condition(active_powers):
+            if not self.due_time:
+                return self._create_debrief_phase()._open()
+
+            now = get_current_time()
+            if self.table.due_mode == DueMode.FIXED or now >= self.due_time:
+                due_time = self.due_time + timedelta(minutes=self.table.get_debrief_phase_duration())
+            else:
+                due_time = now + timedelta(minutes=self.table.get_debrief_phase_duration())
+            return self._create_debrief_phase(due_time)._open()
 
         self._resolve_orders()
         self._occupy()
