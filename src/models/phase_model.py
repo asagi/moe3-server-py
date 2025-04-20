@@ -424,8 +424,15 @@ class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
 
     @override
     def _resolve_orders(self) -> None:
-        # TODO: 増設解体実行
-        ...
+        for order in filter(lambda o: not o.is_assumed(), self.orders):
+            if order.is_gain():
+                self.units.append(order.create_unit())
+                _ = order.success()
+            elif order.is_lose():
+                self.units.remove(order.unit)
+                _ = order.success()
+            else:
+                raise ValueError(f"Invalid order: {str(order)}")
 
     @override
     def _create_next_phase(self) -> Phase:
