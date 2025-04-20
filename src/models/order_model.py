@@ -91,6 +91,12 @@ class Order(Base):
     def is_convoy(self) -> bool:
         return isinstance(self, ConvoyOrder)
 
+    def is_gain(self) -> bool:
+        return isinstance(self, GainOrder)
+
+    def is_lose(self) -> bool:
+        return isinstance(self, LoseOrder)
+
     def match(self, other: Self) -> bool:
         if other.is_assumed():
             return False
@@ -261,6 +267,26 @@ class GainOrder(Order):
     @override
     def match(self, other: Order) -> bool:
         raise NotImplementedError("This method should not be called.")
+
+
+class GainArmyOrder(GainOrder):
+    __mapper_args__ = {
+        "polymorphic_identity": "gain_army",
+    }
+
+    @override
+    def create_unit(self) -> Unit:
+        return Army(self.power, self.origin)
+
+
+class GainFleetOrder(GainOrder):
+    __mapper_args__ = {
+        "polymorphic_identity": "gain_fleet",
+    }
+
+    @override
+    def create_unit(self) -> Unit:
+        return Fleet(self.power, self.origin)
 
 
 class LoseOrder(Order):
