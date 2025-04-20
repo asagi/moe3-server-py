@@ -57,6 +57,14 @@ class Unit(Base):
         self.province = province
         self.dislodged_from = dislodged_from
 
+    def copy(self):
+        if self.is_army():
+            return Army(self.power, self.province)
+        elif self.is_fleet():
+            return Fleet(self.power, self.province)
+        else:
+            raise ValueError(f"Invalid unit: {str(self)}")
+
     @override
     def __str__(self) -> str:
         return f"{self.symbol} {self.province.abbr}"

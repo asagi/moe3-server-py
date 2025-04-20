@@ -351,7 +351,7 @@ class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
 
     @override
     def _initialize_next_orders(self) -> list["Order"]:
-        return self.initialize_next_disband_orders(self.latest_units, self.latest_territories)
+        return self.initialize_next_lose_orders(self.latest_units, self.latest_territories)
 
     @override
     def _get_next_phase(self) -> Self:
@@ -424,8 +424,25 @@ class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
 
     @override
     def _resolve_orders(self) -> None:
-        # TODO: 増設解体実行
-        ...
+        for unit in self.latest_units:
+            self.units.append(unit.copy())
+
+        for order in filter(lambda o: not o.is_assumed(), self.orders):
+            if order.is_gain():
+                if not any(u.province == order.unit.province for u in self.units):
+                    self.units.append(order.create_unit())
+                    _ = order.valid()
+                else:
+                    _ = order.invalid()
+            elif order.is_lose():
+                unit = next((u for u in self.units if u.province == order.unit.province), None)
+                if unit:
+                    self.units.remove(unit)
+                    _ = order.valid()
+                else:
+                    _ = order.invalid()
+            else:
+                raise ValueError(f"Invalid order: {str(order)}")
 
     @override
     def _create_next_phase(self) -> Phase:

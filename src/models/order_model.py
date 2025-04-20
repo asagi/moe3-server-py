@@ -91,16 +91,14 @@ class Order(Base):
     def is_convoy(self) -> bool:
         return isinstance(self, ConvoyOrder)
 
+    def is_gain(self) -> bool:
+        return isinstance(self, GainOrder)
+
+    def is_lose(self) -> bool:
+        return isinstance(self, LoseOrder)
+
     def match(self, other: Self) -> bool:
-        if other.is_assumed():
-            return False
-        if self.target_unit is None:
-            return False
-        if self.target_unit.symbol != other.unit.symbol:
-            return False
-        if not Province.same(self.target_origin, other.origin):
-            return False
-        return Province.same(self.target_dest, other.dest)
+        raise NotImplementedError("This method should not be called.")
 
     def assumed_by(self, power: Power) -> Self:
         self.power = power
@@ -141,10 +139,6 @@ class HoldOrder(Order):
         unit_str = super().__str__()
         return f"{unit_str}-Holds"
 
-    @override
-    def match(self, other: Order) -> bool:
-        raise NotImplementedError("This method should not be called.")
-
 
 class MoveOrder(Order):
     __mapper_args__ = {
@@ -174,12 +168,26 @@ class MoveOrder(Order):
             unit.dislodged_from = self.dislodger.origin
         return unit
 
+
+class DirectedOrder(Order):
+    __mapper_args__ = {
+        "polymorphic_identity": "drirected",
+    }
+
     @override
     def match(self, other: Self) -> bool:
-        raise NotImplementedError("This method should not be called.")
+        if other.is_assumed():
+            return False
+        if self.target_unit is None:
+            return False
+        if self.target_unit.symbol != other.unit.symbol:
+            return False
+        if not Province.same(self.target_origin, other.origin):
+            return False
+        return Province.same(self.target_dest, other.dest)
 
 
-class SupportOrder(Order):
+class SupportOrder(DirectedOrder):
     __mapper_args__ = {
         "polymorphic_identity": "support",
     }
@@ -208,7 +216,7 @@ class SupportOrder(Order):
         return self
 
 
-class ConvoyOrder(Order):
+class ConvoyOrder(DirectedOrder):
     __mapper_args__ = {
         "polymorphic_identity": "convoy",
     }
@@ -238,19 +246,11 @@ class RetreatOrder(Order):
         "polymorphic_identity": "retreat",
     }
 
-    @override
-    def match(self, other: Order) -> bool:
-        raise NotImplementedError("This method should not be called.")
-
 
 class DisbandOrder(Order):
     __mapper_args__ = {
         "polymorphic_identity": "disband",
     }
-
-    @override
-    def match(self, other: Order) -> bool:
-        raise NotImplementedError("This method should not be called.")
 
 
 class GainOrder(Order):
@@ -258,16 +258,28 @@ class GainOrder(Order):
         "polymorphic_identity": "gain",
     }
 
+
+class GainArmyOrder(GainOrder):
+    __mapper_args__ = {
+        "polymorphic_identity": "gain_army",
+    }
+
     @override
-    def match(self, other: Order) -> bool:
-        raise NotImplementedError("This method should not be called.")
+    def create_unit(self) -> Unit:
+        return Army(self.power, self.origin)
+
+
+class GainFleetOrder(GainOrder):
+    __mapper_args__ = {
+        "polymorphic_identity": "gain_fleet",
+    }
+
+    @override
+    def create_unit(self) -> Unit:
+        return Fleet(self.power, self.origin)
 
 
 class LoseOrder(Order):
     __mapper_args__ = {
         "polymorphic_identity": "lose",
     }
-
-    @override
-    def match(self, other: Order) -> bool:
-        raise NotImplementedError("This method should not be called.")
