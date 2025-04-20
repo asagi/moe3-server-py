@@ -424,6 +424,7 @@ class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
 
     @override
     def _resolve_orders(self) -> None:
+        # TODO: 国ごとに指定数を超える増設と解体を不可とする
         for order in filter(lambda o: not o.is_assumed(), self.orders):
             if order.is_gain():
                 self.units.append(order.create_unit())
