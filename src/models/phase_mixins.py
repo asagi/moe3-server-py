@@ -121,7 +121,7 @@ class BeforeOrderPhaseMixin:
 
 
 class BeforeAdjustmentPhaseMixin:
-    def initialize_next_disband_orders(self, units: list[Unit], territories: list[Territory]) -> list["Order"]:
+    def initialize_next_lose_orders(self, units: list[Unit], territories: list[Territory]) -> list["Order"]:
         orders: list[Order] = []
         units_sorted_by_supply_distance: dict[Power, list[Unit]] = Path.get_units_sorted_by_supply_distance(units, territories)
 

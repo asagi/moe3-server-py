@@ -351,7 +351,7 @@ class FallRetreatPhase(RetreatPhase, BeforeAdjustmentPhaseMixin):
 
     @override
     def _initialize_next_orders(self) -> list["Order"]:
-        return self.initialize_next_disband_orders(self.latest_units, self.latest_territories)
+        return self.initialize_next_lose_orders(self.latest_units, self.latest_territories)
 
     @override
     def _get_next_phase(self) -> Self:
