@@ -424,14 +424,23 @@ class AdjusntmentPhase(Phase, BeforeOrderPhaseMixin):
 
     @override
     def _resolve_orders(self) -> None:
-        # TODO: 国ごとに指定数を超える増設と解体を不可とする
+        for unit in self.latest_units:
+            self.units.append(unit.copy())
+
         for order in filter(lambda o: not o.is_assumed(), self.orders):
             if order.is_gain():
-                self.units.append(order.create_unit())
-                _ = order.success()
+                if not any(u.province == order.unit.province for u in self.units):
+                    self.units.append(order.create_unit())
+                    _ = order.valid()
+                else:
+                    _ = order.invalid()
             elif order.is_lose():
-                self.units.remove(order.unit)
-                _ = order.success()
+                unit = next((u for u in self.units if u.province == order.unit.province), None)
+                if unit:
+                    self.units.remove(unit)
+                    _ = order.valid()
+                else:
+                    _ = order.invalid()
             else:
                 raise ValueError(f"Invalid order: {str(order)}")
 
